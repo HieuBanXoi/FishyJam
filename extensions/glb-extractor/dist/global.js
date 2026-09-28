@@ -1,0 +1,13 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.PACKAGE_NAME = void 0;
+exports.log = log;
+exports.warn = warn;
+exports.PACKAGE_NAME = 'glb-extractor';
+function log(...arg) {
+    return console.log(`[${exports.PACKAGE_NAME}]`, ...arg);
+}
+function warn(...arg) {
+    return console.warn(`[${exports.PACKAGE_NAME}]`, ...arg);
+}
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiZ2xvYmFsLmpzIiwic291cmNlUm9vdCI6IiIsInNvdXJjZXMiOlsiLi4vc291cmNlL2dsb2JhbC50cyJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiOzs7QUFFQSxrQkFFQztBQUVELG9CQUVDO0FBUlksUUFBQSxZQUFZLEdBQUcsZUFBZSxDQUFDO0FBRTVDLFNBQWdCLEdBQUcsQ0FBQyxHQUFHLEdBQVU7SUFDN0IsT0FBTyxPQUFPLENBQUMsR0FBRyxDQUFDLElBQUksb0JBQVksR0FBRyxFQUFFLEdBQUcsR0FBRyxDQUFDLENBQUM7QUFDcEQsQ0FBQztBQUVELFNBQWdCLElBQUksQ0FBQyxHQUFHLEdBQVU7SUFDOUIsT0FBTyxPQUFPLENBQUMsSUFBSSxDQUFDLElBQUksb0JBQVksR0FBRyxFQUFFLEdBQUcsR0FBRyxDQUFDLENBQUM7QUFDckQsQ0FBQyIsInNvdXJjZXNDb250ZW50IjpbImV4cG9ydCBjb25zdCBQQUNLQUdFX05BTUUgPSAnZ2xiLWV4dHJhY3Rvcic7XG5cbmV4cG9ydCBmdW5jdGlvbiBsb2coLi4uYXJnOiBhbnlbXSkge1xuICAgIHJldHVybiBjb25zb2xlLmxvZyhgWyR7UEFDS0FHRV9OQU1FfV1gLCAuLi5hcmcpO1xufVxuXG5leHBvcnQgZnVuY3Rpb24gd2FybiguLi5hcmc6IGFueVtdKSB7XG4gICAgcmV0dXJuIGNvbnNvbGUud2FybihgWyR7UEFDS0FHRV9OQU1FfV1gLCAuLi5hcmcpO1xufVxuIl19

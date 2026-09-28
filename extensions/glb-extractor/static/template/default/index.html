@@ -1,0 +1,40 @@
+<div id="app" class="gx-root">
+    <div class="gx-toolbar">
+        <button id="scanBtn" class="gx-btn gx-btn-primary">🔍 Quét .fbx trong project</button>
+        <span id="summaryText" class="gx-summary"></span>
+    </div>
+
+    <div class="gx-output-row">
+        <label for="outputInput">Thư mục xuất:</label>
+        <input id="outputInput" class="gx-input" type="text" />
+        <button id="chooseDirBtn" class="gx-btn">Chọn...</button>
+    </div>
+
+    <div class="gx-list-toolbar">
+        <button id="selectAllBtn" class="gx-btn-sm">Chọn tất cả</button>
+        <button id="selectNoneBtn" class="gx-btn-sm">Bỏ chọn</button>
+        <span class="gx-spacer"></span>
+        <button id="extractBtn" class="gx-btn gx-btn-primary" disabled>⬇ Trích xuất đã chọn</button>
+    </div>
+
+    <div class="gx-table-wrap">
+        <table class="gx-table">
+            <thead>
+                <tr>
+                    <th class="gx-col-check"><input id="headerCheckbox" type="checkbox" /></th>
+                    <th>Tên file</th>
+                    <th>Đường dẫn</th>
+                    <th class="gx-col-num">Mesh</th>
+                    <th class="gx-col-num">Texture</th>
+                    <th>Trạng thái</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <tr class="gx-empty-row"><td colspan="6">Bấm "Quét .fbx trong project" để bắt đầu.</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="gx-log-title">Log</div>
+    <pre id="logBox" class="gx-log"></pre>
+</div>

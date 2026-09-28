@@ -1,0 +1,15 @@
+{
+  "__version__": "1.0.0",
+  "compressionType": "lossy",
+  "audioCompressionEnabled": true,
+  "channel_AppLovin": true,
+  "channel_Facebook": true,
+  "channel_Google": true,
+  "channel_IronSource": true,
+  "channel_Mintegral": true,
+  "channel_TikTok": true,
+  "channel_Unity": true,
+  "googleUrl": "https://play.google.com/store/apps/details?id=com.fishy.jam.puzzle&hl=en&gl=US",
+  "appleUrl": "https://play.google.com/store/apps/details?id=com.fishy.jam.puzzle&hl=en&gl=US",
+  "compressionQuality": 80
+}

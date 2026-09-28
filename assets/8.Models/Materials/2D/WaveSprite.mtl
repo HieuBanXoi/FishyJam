@@ -1,0 +1,56 @@
+{
+  "__type__": "cc.Material",
+  "_name": "",
+  "_objFlags": 0,
+  "__editorExtras__": {},
+  "_native": "",
+  "_effectAsset": {
+    "__uuid__": "2e821639-3c1f-43e7-9e94-15c8dbeccf33",
+    "__expectedType__": "cc.EffectAsset"
+  },
+  "_techIdx": 0,
+  "_defines": [
+    {
+      "EnableWave": true,
+      "EnableRipple": true,
+      "USE_TEXTURE": true
+    }
+  ],
+  "_states": [
+    {
+      "rasterizerState": {},
+      "depthStencilState": {
+        "depthTest": true
+      },
+      "blendState": {
+        "targets": [
+          {}
+        ]
+      }
+    }
+  ],
+  "_props": [
+    {
+      "tileScale": {
+        "__type__": "cc.Vec2",
+        "x": 3,
+        "y": 1
+      },
+      "alpha": 0,
+      "tint": {
+        "__type__": "cc.Color",
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "a": 255
+      },
+      "waveSpeed": 0.5,
+      "waveWidth": 0.002,
+      "waveFrequency": 50,
+      "rippleSpeed": 0.2,
+      "rippleCount": 4,
+      "rippleSpacing": 0.01,
+      "rippleWidth": 0.02
+    }
+  ]
+}

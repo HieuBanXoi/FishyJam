@@ -1,0 +1,426 @@
+// Copyright (c) 2017-2020 Xiamen Yaji Software Co., Ltd.
+CCEffect %{
+  techniques:
+  - passes:
+    - vert: sprite-vs:vert
+      frag: sprite-fs:frag
+      depthStencilState:
+        depthTest: false
+        depthWrite: false
+      blendState:
+        targets:
+        - blend: true
+          blendSrc: src_alpha
+          blendDst: one_minus_src_alpha
+          blendDstAlpha: one_minus_src_alpha
+      rasterizerState:
+        cullMode: none
+      properties:
+        tileScale:     { value: [1, 1] }
+        alpha: { value: 1.0, editor: { slide: true, range: [0, 1], step: 0.01 } }
+        brightness: { value: 0.0 , editor: { slide: true, range: [-1.0, 1.0], step: 0.001 }  }
+        contrast: { value: 1.0, editor: { slide: true, range: [0.0, 2.0], step: 0.001 }  }
+        saturation: { value: 1.0, editor: { slide: true, range: [0.0, 2.0], step: 0.001 } }
+        hue:        { value: 0.0, editor: { slide: true, range: [-180.0, 180.0], step: 1.0 } }    # độ
+        tint: {value: [1, 1, 1, 1], editor: { type: color, parent: UseTint}}
+        waveSpeed:     { value: 1.0, editor: { slide: true, range: [0.0, 10.0], step: 0.01, parent: EnableWave } }
+        waveWidth:     { value: 0.02, editor: { slide: true, range: [0.0, 0.2], step: 0.001, parent: EnableWave } }
+        waveFrequency: { value: 10.0, editor: { slide: true, range: [0.0, 50.0], step: 0.1, parent: EnableWave } }
+        rippleSpeed:   { value: 1.0, editor: { slide: true, range: [0.0, 5.0], step: 0.01, parent: EnableRipple } }
+        rippleCount:   { value: 5.0, editor: { slide: true, range: [0.0, 16.0], step: 1.0, parent: EnableRipple } }
+        rippleSpacing: { value: 0.08, editor: { slide: true, range: [0.0, 0.5], step: 0.001, parent: EnableRipple } }
+        rippleWidth:   { value: 0.1, editor: { slide: true, range: [0.0, 1.0], step: 0.001, parent: EnableRipple } }
+        bubbleRadius:  { value: 1.0, editor: { slide: true, range: [0.1, 1.5], step: 0.001, parent: WrapBubble } }
+        bubbleFeather: { value: 0.05, editor: { slide: true, range: [0.0, 0.5], step: 0.001, parent: WrapBubble } }
+        touchSpeed:    { value: 3.0, editor: { slide: true, range: [0.0, 10.0], step: 0.01, parent: WrapBubble } }
+        touchWidth:    { value: 0.5, editor: { slide: true, range: [0.05, 3.14], step: 0.01, parent: WrapBubble } }
+        touchStrength: { value: 0.15, editor: { slide: true, range: [0.0, 1.0], step: 0.001, parent: WrapBubble } }
+        flatWidth:     { value: 0.3, editor: { slide: true, range: [0.01, 1.5], step: 0.01, parent: WrapBubble } }
+        flatDepth:     { value: 0.15, editor: { slide: true, range: [0.0, 1.0], step: 0.001, parent: WrapBubble } }
+        flatRoundness: { value: 0.4, editor: { slide: true, range: [0.0, 0.99], step: 0.01, parent: WrapBubble } }
+        flatEaseTime:  { value: 0.15, editor: { slide: true, range: [0.0, 1.0], step: 0.01, parent: WrapBubble } }
+}%
+
+CCProgram sprite-vs %{
+  precision highp float;
+  #include <builtin/uniforms/cc-global>
+  #if USE_LOCAL
+    #include <builtin/uniforms/cc-local>
+  #endif
+  #if SAMPLE_FROM_RT
+    #include <common/common-define>
+  #endif
+  in vec3 a_position;
+  in vec2 a_texCoord;
+  in vec4 a_color;
+
+  out vec4 color;
+  out vec2 uv0;
+
+  vec4 vert () {
+    vec4 pos = vec4(a_position, 1);
+
+    #if USE_LOCAL
+      pos = cc_matWorld * pos;
+    #endif
+
+    #if USE_PIXEL_ALIGNMENT
+      pos = cc_matView * pos;
+      pos.xyz = floor(pos.xyz);
+      pos = cc_matProj * pos;
+    #else
+      pos = cc_matViewProj * pos;
+    #endif
+
+    uv0 = a_texCoord;
+    #if SAMPLE_FROM_RT
+      CC_HANDLE_RT_SAMPLE_FLIP(uv0);
+    #endif
+    color = a_color;
+
+    return pos;
+  }
+}%
+
+CCProgram sprite-fs %{
+  precision highp float;
+  #include <builtin/uniforms/cc-global>
+  #include <builtin/internal/embedded-alpha>
+  #include <builtin/internal/alpha-test>
+  #pragma define-meta UseTint
+  #pragma define-meta EnableWave
+  #pragma define-meta EnableRipple
+  #pragma define-meta WrapBubble
+  #pragma define-meta WrapSquareToCircle
+
+  in vec4 color;
+  
+  #define POINT_COUNT 8
+  #define TOUCH_COUNT 8
+  #define HIT_COUNT 8
+  uniform Constant {
+    vec4 point[8];
+    vec4 touchs[8];
+    vec4 hits[8]; // independent from touchs[]: x = collision angle, y = active flag (0 unset, 1 set), zw unused
+    vec2 tileScale;
+    float alpha;
+    float brightness;
+    float contrast;
+    float saturation;
+    float hue;
+    float waveSpeed;
+    float waveWidth;
+    float waveFrequency;
+    float rippleSpeed;
+    float rippleCount;
+    float rippleSpacing;
+    float rippleWidth;
+    float bubbleRadius;
+    float bubbleFeather;
+    float touchSpeed;
+    float touchWidth;
+    float touchStrength;
+    float flatWidth;
+    float flatDepth;
+    float flatRoundness;
+    float flatEaseTime;
+  };
+  
+  #if UseTint
+    uniform Tint {
+      vec4 tint;
+    };
+  #endif
+
+  vec3 hueShift(vec3 color, float hueDeg) {
+    float hue = radians(hueDeg); // convert deg → rad
+    const vec3 k = vec3(0.57735, 0.57735, 0.57735);
+    float cosAngle = cos(hue);
+    return vec3(color * cosAngle + cross(k, color) * sin(hue) + k * dot(k, color) * (1.0 - cosAngle));
+  }
+
+  #if USE_TEXTURE
+    in vec2 uv0;
+    #pragma builtin(local)
+    layout(set = 2, binding = 12) uniform sampler2D cc_spriteTexture;
+  #endif
+
+  vec3 AdjustSaturation(vec3 color, float sat) {
+    float gray = dot(color, vec3(0.299, 0.587, 0.114));
+    return mix(vec3(gray), color, sat);
+  }
+
+  #if WrapBubble
+
+  // Angular squish contributed by a single touch, for the ray through centered point `c` (only its
+  // angle matters, not its magnitude). Returns a signed fraction: negative = dent, positive = bulge.
+  float touchOffset(vec2 c, vec4 touch) {
+    if (dot(touch.xy, touch.xy) < 0.25) {
+      return 0.0;
+    }
+
+    float elapsed = cc_time.x - touch.z;
+    if (elapsed < 0.0 || touchWidth <= 0.0001) {
+      return 0.0;
+    }
+
+    float impactAngle = atan(-touch.y, -touch.x);
+    float pixelAngle = atan(c.y, c.x);
+    float angleDiff = pixelAngle - impactAngle;
+    angleDiff = mod(angleDiff + 3.14159265, 6.2831853) - 3.14159265; // wrap to [-PI, PI]
+    float angularDist = abs(angleDiff);
+
+    float front = elapsed * touchSpeed;
+    float fadeDist = touchWidth * 6.0;
+    float fadeOut = clamp(1.0 - front / fadeDist, 0.0, 1.0);
+    if (fadeOut <= 0.0) {
+      return 0.0;
+    }
+
+    float d = angularDist - front;
+    float envelope = exp(-(d * d) / (touchWidth * touchWidth));
+    // Negated so the impact point dents inward first (as the wavefront approaches, d > 0) and only
+    // bulges back out after the front has passed it (d < 0), instead of the other way around.
+    return -sin(d / touchWidth * 3.14159265) * envelope * fadeOut;
+  }
+
+  // Sums every touch's squish along the ray through `c`.
+  float touchSquishAt(vec2 c) {
+    float squish = 0.0;
+    for (int i = 0; i < TOUCH_COUNT; i++) {
+      squish += touchOffset(c, touchs[i]);
+    }
+    return squish * touchStrength;
+  }
+
+  // A real flat spot is a straight chord perpendicular to the normal at the collision angle (hit.x),
+  // not a smooth dip - the underlying shape is the polar form of a line whose closest point to the
+  // center sits at distance (bubbleRadius - flatDepth) along the hit's angle: r(angle) = (bubbleRadius
+  // - flatDepth) / cos(angle - hitAngle). Rather than switching to that radius outright at flatWidth
+  // (a hard cutoff that jumps unless flatWidth happens to exactly match where the line meets the
+  // circle, which it generally won't), this returns how much shorter than the round radius that line
+  // asks for, faded to 0 as the angle nears flatWidth via smoothstep - so the flat blends into the
+  // round boundary with a rounded corner instead of tearing at a mismatched edge.
+  float flatSpotClip(float pixelAngle, vec4 hit) {
+    if (hit.y < 0.5 || flatWidth <= 0.0001) {
+      return 0.0;
+    }
+
+    float angleDiff = pixelAngle - hit.x;
+    angleDiff = mod(angleDiff + 3.14159265, 6.2831853) - 3.14159265; // wrap to [-PI, PI]
+    float absDiff = abs(angleDiff);
+    if (absDiff >= flatWidth) {
+      return 0.0;
+    }
+
+    float c = cos(angleDiff);
+    if (c <= 0.05) {
+      return 0.0;
+    }
+
+    float baseRadius = max(bubbleRadius - flatDepth, 0.0); // clamp so a too-large flatDepth can't flip the line's distance negative
+    float flatR = baseRadius / c;
+    float clip = max(bubbleRadius - flatR, 0.0); // how much shorter than the round radius this angle wants to be
+    // 1 at the hit's own angle, fading to 0 by flatWidth so the clip tapers off instead of snapping off.
+    // flatRoundness (0-1) controls how much of flatWidth is spent on that fade: 0 = fade only right at
+    // the edge (sharp corners, old behavior), closer to 1 = fade starts almost immediately (very round).
+    float fadeStart = flatWidth * clamp(1.0 - flatRoundness, 0.01, 0.99);
+    float fade = 1.0 - smoothstep(fadeStart, flatWidth, absDiff);
+
+    // Eases the whole flat spot in over flatEaseTime seconds since it was created (hit.z), instead of
+    // snapping to full depth the instant it's added, so it grows in softly rather than popping in.
+    float elapsedIn = cc_time.x - hit.z;
+    float growth = clamp(elapsedIn / max(flatEaseTime, 0.0001), 0.0, 1.0);
+    growth = growth * growth * (3.0 - 2.0 * growth); // smoothstep(0, 1, growth), inlined since both edges are constants
+
+    // Symmetric ease-out: clearHit() stamps hit.w with the time it was cleared instead of killing the
+    // slot outright, so it relaxes back to round over flatEaseTime too. hit.w < 0 means still live
+    // (never cleared), so shrink stays at 1 and this costs nothing extra while the contact continues.
+    float shrink = 1.0;
+    if (hit.w >= 0.0) {
+      float elapsedOut = cc_time.x - hit.w;
+      float s = clamp(elapsedOut / max(flatEaseTime, 0.0001), 0.0, 1.0);
+      shrink = 1.0 - s * s * (3.0 - 2.0 * s);
+    }
+
+    return clip * fade * growth * shrink;
+  }
+
+  // The bubble's boundary radius isn't a fixed circle: at each angle it's bubbleRadius scaled by
+  // (1 + squish) - smaller where a touch is denting it in, larger where it's bulging out - and then
+  // shortened further by any flat spot's clip at that angle. Everything below measures distance as a
+  // fraction of *that* local radius, so 1.0 always means "at the boundary, whatever shape it currently
+  // has", 0.0 always means center, regardless of any touch squish/flattening.
+  float localBubbleRadius(vec2 c0) {
+    float squish = touchSquishAt(c0);
+    float radius = bubbleRadius * max(1.0 + squish, 0.0001);
+
+    float pixelAngle = atan(c0.y, c0.x);
+    float clip = 0.0;
+    for (int i = 0; i < HIT_COUNT; i++) {
+      clip += flatSpotClip(pixelAngle, hits[i]);
+    }
+    return max(radius - clip, 0.0001);
+  }
+
+  float bubbleAlpha(vec2 uv) {
+    vec2 c0 = (uv - 0.5) * 2.0;
+    float r = length(c0) / localBubbleRadius(c0);
+    return 1.0 - smoothstep(1.0 - bubbleFeather, 1.0, r);
+  }
+
+  // LUÔN áp dụng khi WrapBubble bật, không phụ thuộc WrapSquareToCircle: kéo nội dung texture theo đúng biên dạng
+  // cục bộ đã bị chạm làm lõm/phồng hoặc vết dẹt làm ngắn lại (localBubbleRadius) - chỗ lõm thì kéo nội dung vào
+  // trong, chỗ phồng thì kéo nội dung ra ngoài, để hình vẽ "theo sát" đúng hình dạng thật tại chỗ đó thay vì chỉ bị
+  // cắt bởi biên mới (giữ nguyên vị trí nội dung như cũ, nhìn tách rời khỏi phần biên đã đổi hình).
+  vec2 squishToLocalRadius(vec2 uv) {
+    vec2 c0 = (uv - 0.5) * 2.0;
+    vec2 c = c0 / localBubbleRadius(c0); // -1..1 tại biên (đã lõm/phồng), tính theo tâm
+    return c * 0.5 + 0.5; // back to 0..1 uv space
+  }
+
+  #if WrapSquareToCircle
+  // Riêng bước kéo giãn 4 góc ảnh vuông lấp đầy toàn bộ hình tròn - áp dụng SAU squishToLocalRadius ở trên (uv
+  // truyền vào đây đã là toạ độ theo đúng biên lõm/phồng), độc lập với việc texture có theo lõm/phồng hay không.
+  // KHÔNG đổi ranh giới/hình dạng bubble (việc đó luôn do WrapBubble/bubbleAlpha lo). Tắt macro này thì bubble vẫn
+  // tròn, vẫn lõm/phồng khi chạm y hệt (nhờ squishToLocalRadius ở trên) - chỉ riêng phần kéo giãn góc vuông này
+  // không chạy nữa, tức chỉ hiện đúng phần nằm trong đường tròn nội tiếp, 4 góc ảnh vuông coi như không tồn tại vì
+  // đã bị bubbleAlpha discard từ trước rồi.
+  vec2 squareToCircle(vec2 uv) {
+    vec2 c0 = (uv - 0.5) * 2.0;
+    float r = length(c0);
+    float squareRadius = max(abs(c0.x), abs(c0.y)); // 0 at center, 1 at the square's edge/corners
+    // Note: `warped` comes out already expressed directly in the texture's own -1..1 centered space
+    // (its squareRadius reaches exactly 1 at the texture's real edge/corner), regardless of the local
+    // boundary radius - dividing by it above only changes which destination points reach r=1.
+    vec2 warped = squareRadius > 0.0001 ? c0 * (r / squareRadius) : c0;
+    return warped * 0.5 + 0.5; // back to 0..1 uv space
+  }
+  #endif
+  #endif
+
+  #if EnableRipple
+  
+  vec2 rippleOffset(vec2 uv0, vec4 point) {
+    
+    if (point.w <= 0.0001) {
+      return vec2(0.0);
+    }
+
+    float aspect = point.w;
+    vec2 diff = uv0 - point.xy;
+    vec2 diffAspect = vec2(diff.x * aspect, diff.y);
+    float dist = length(diffAspect);
+    float totalElapsed = cc_time.x - point.z;
+    int count = int(rippleCount);
+
+    if (totalElapsed < 0.0 || count <= 0 || rippleWidth <= 0.0001) {
+      return vec2(0.0);
+    }
+
+    float travelled = totalElapsed * rippleSpeed;
+    float fadeDist = rippleWidth * 6.0 + max(float(count - 1), 0.0) * rippleSpacing;
+    float fadeOut = clamp(1.0 - travelled / fadeDist, 0.0, 1.0);
+    if (fadeOut <= 0.0) {
+      return vec2(0.0);
+    }
+
+    float rippleSum = 0.0;
+    const int MAX_RIPPLES = 16;
+    for (int i = 0; i < MAX_RIPPLES; i++) {
+      if (i >= count) break;
+      float ringRadius = travelled + rippleWidth + float(i) * rippleSpacing;
+      float d = dist - ringRadius;
+      float envelope = exp(-(d * d) / (rippleWidth * rippleWidth));
+      rippleSum += sin(d / rippleWidth * 3.14159265) * envelope;
+    }
+    rippleSum *= fadeOut;
+
+    // diffAspect / (dist + eps) behaves like the unit radial direction but naturally goes to zero
+    // right at the origin instead of blowing up, so there is no singularity to distort at dist = 0.
+    vec2 dirScaled = diffAspect / (dist + 0.0001);
+    dirScaled.x /= aspect;
+    return dirScaled * rippleSum * rippleWidth * 0.5;
+  }
+  #endif
+
+  #if EnableWave
+
+  float test() {
+    return 1.0;
+  }
+  #endif
+
+  vec4 frag () {
+    vec4 o = vec4(1, 1, 1, 1);
+    
+
+
+    #if USE_TEXTURE
+      vec2 waveUV = uv0;
+
+      #if EnableWave
+        float t = cc_time.x * waveSpeed;
+        waveUV.x += sin(uv0.y * waveFrequency + t) * waveWidth;
+        waveUV.y += cos(uv0.x * waveFrequency + t) * waveWidth;
+      #endif
+
+      #if EnableRipple
+        for (int i = 0; i < POINT_COUNT; i++) {
+          waveUV += rippleOffset(uv0, point[i]);
+        }
+      #endif
+
+      #if WrapBubble
+        float edgeAlpha = bubbleAlpha(uv0);
+        if (edgeAlpha <= 0.0) {
+          discard;
+        }
+        // Ranh giới tròn (edgeAlpha ở trên) và texture theo sát lõm/phồng do chạm (squishToLocalRadius) luôn có,
+        // không phụ thuộc macro dưới đây. WrapSquareToCircle chỉ thêm/bớt đúng 1 việc: có kéo giãn 4 góc ảnh vuông
+        // ra lấp đầy hình tròn (squareToCircle) hay không - tắt thì chỉ hiện đúng phần nằm trong đường tròn nội tiếp.
+        waveUV = squishToLocalRadius(waveUV);
+        #if WrapSquareToCircle
+          waveUV = squareToCircle(waveUV);
+        #endif
+      #endif
+
+      // tileScale repeats the texture at its native tile size across the sprite instead of stretching
+      // a single copy over it; the texture's sampler wrap mode (set to Mirrored Repeat on the source
+      // texture asset, not here) tiles it seamlessly without a hard seam. Wave/ripple math above stays
+      // in plain 0-1 sprite space so ripples still line up with the touch point regardless of tiling.
+      o *= CCSampleWithAlphaSeparated(cc_spriteTexture, waveUV * tileScale);
+
+      #if WrapBubble
+        o.a *= edgeAlpha;
+      #endif
+      #if IS_GRAY
+        float gray  = 0.2126 * o.r + 0.7152 * o.g + 0.0722 * o.b;
+        gray *= 2.0;
+        // gray = clamp(gray, 0.0, 0.9);
+        o.r = o.g = o.b = gray;
+      #endif
+    #endif
+
+
+    o.rgb = hueShift(o.rgb, hue);
+    o *= color;
+    // Độ sáng
+    o.rgb += brightness;
+
+    // Độ tương phản
+    o.rgb = ((o.rgb - 0.5) * contrast + 0.5);
+
+    // Độ bão hòa
+    o.rgb = AdjustSaturation(o.rgb, saturation);
+    if(o.a < alpha) discard;
+
+    #if UseTint
+      o.rgb = tint.rgb;
+    #endif
+
+    
+
+    return o;
+  }
+}%

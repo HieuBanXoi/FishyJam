@@ -1,0 +1,139 @@
+
+lose_fish.png
+size: 809, 242
+format: RGBA8888
+filter: Linear, Linear
+repeat: none
+bubble1
+  rotate: true
+  xy: 656, 11
+  size: 41, 42
+  orig: 43, 44
+  offset: 1, 1
+  index: -1
+bubble2
+  rotate: true
+  xy: 656, 11
+  size: 41, 42
+  orig: 43, 44
+  offset: 1, 1
+  index: -1
+bubble3
+  rotate: false
+  xy: 740, 72
+  size: 67, 67
+  orig: 69, 69
+  offset: 1, 1
+  index: -1
+bubble4
+  rotate: false
+  xy: 740, 72
+  size: 67, 67
+  orig: 69, 69
+  offset: 1, 1
+  index: -1
+h_body
+  rotate: false
+  xy: 2, 4
+  size: 266, 236
+  orig: 266, 236
+  offset: 0, 0
+  index: -1
+h_eyeL
+  rotate: true
+  xy: 754, 145
+  size: 30, 45
+  orig: 32, 49
+  offset: 1, 2
+  index: -1
+h_eyeR
+  rotate: false
+  xy: 612, 46
+  size: 42, 46
+  orig: 44, 49
+  offset: 1, 2
+  index: -1
+h_eyewL
+  rotate: false
+  xy: 754, 177
+  size: 46, 63
+  orig: 48, 65
+  offset: 1, 1
+  index: -1
+h_eyewR
+  rotate: false
+  xy: 740, 4
+  size: 64, 66
+  orig: 66, 68
+  offset: 1, 1
+  index: -1
+h_vayL
+  rotate: true
+  xy: 613, 94
+  size: 82, 57
+  orig: 83, 58
+  offset: 1, 0
+  index: -1
+h_vayR
+  rotate: true
+  xy: 672, 54
+  size: 85, 66
+  orig: 85, 66
+  offset: 0, 0
+  index: -1
+v_body
+  rotate: false
+  xy: 270, 31
+  size: 269, 209
+  orig: 269, 209
+  offset: 0, 0
+  index: -1
+v_eyes
+  rotate: false
+  xy: 541, 178
+  size: 133, 62
+  orig: 136, 64
+  offset: 2, 1
+  index: -1
+v_mouth
+  rotate: true
+  xy: 700, 2
+  size: 50, 21
+  orig: 52, 23
+  offset: 1, 1
+  index: -1
+v_top
+  rotate: true
+  xy: 676, 141
+  size: 99, 76
+  orig: 100, 76
+  offset: 1, 0
+  index: -1
+v_vayL
+  rotate: false
+  xy: 541, 22
+  size: 69, 75
+  orig: 70, 75
+  offset: 0, 0
+  index: -1
+v_vayR
+  rotate: false
+  xy: 541, 99
+  size: 70, 77
+  orig: 70, 77
+  offset: 0, 0
+  index: -1
+v_wtL
+  rotate: true
+  xy: 612, 12
+  size: 32, 19
+  orig: 34, 21
+  offset: 1, 1
+  index: -1
+v_wtR
+  rotate: true
+  xy: 633, 26
+  size: 18, 16
+  orig: 20, 18
+  offset: 1, 1
+  index: -1
