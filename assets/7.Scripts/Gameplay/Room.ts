@@ -30,7 +30,16 @@ export var room: Room = null;
  */
 export const BubbleData: 
 [number, number, number[]][] = 
-[[132.428,1268.46,[7,8]],[-621.029,874.37,[8,7,8]],[620.997,1242.781,[7,3,3]],[-331.329,1268.474,[8,3]],[311.746,840.762,[2,9]],[710.886,827.523,[3]],[710.774,492.52,[8]],[-147.621,672.359,[2,3,9]],[245.951,381.656,[17,17]],[-226.381,189.451,[8,2]],[620.976,67.396,[7,9,8]],[-646.47,385.848,[9,8]],[125.572,0.849,[7]],[-646.417,-77.964,[3,9]],[-181.644,-297.852,[2,2,8]],[-620.956,-566.574,[3,7,2]],[342.884,-253.975,[7]],[101.306,-697.127,[2,9]],[-602.293,-1099.642,[17,17,17,7]],[-56.128,-1180.229,[9,7,2,9]],[602.341,-613.586,[3,17,3,17]],[495.364,-1155.148,[2,9,17,17]]] 
+[[132.428,1268.46,[2,7]],[-621.029,874.37,[2,3,8]],[620.997,1242.781,[7,11,2]],[-331.329,1268.474,[3,3]],[311.746,840.762,[3,11]],[710.886,827.523,[9]],[710.774,492.52,[2]],[-147.621,672.359,[11,7,9]],[245.951,381.656,[11,11]],[-226.381,189.451,[8,7]],[620.976,67.396,[7,3,8]],[-646.47,385.848,[9,7]],[125.572,0.849,[8]],[-646.417,-77.964,[2,3]],[-181.644,-297.852,[11,9,2]],[-620.956,-566.574,[8,2,11]],[342.884,-253.975,[2]],[101.306,-697.127,[8,7]],[-602.293,-1099.642,[11,9,2,11]],[-56.128,-1180.229,[9,3,9,3]],[602.341,-613.586,[9,8,8,3]],[495.364,-1155.148,[9,7,7,8]]] 
+
+
+
+
+
+
+
+
+
 
 
 
@@ -39,15 +48,25 @@ export const BubbleData:
 
 
 export const Items = [
-  [ 3, 3, 3 ], [ 17, 17, 17 ],
-[ 8, 8, 8 ], [ 9, 9, 9 ],
-[ 8, 8, 8 ], [ 3, 3, 3 ],
-[ 7, 7, 7 ], [ 2, 2, 2 ],
-[ 7, 7, 7 ], [ 9, 9, 9 ],
-[ 2, 2, 2 ], [ 8, 8, 8 ],
-[ 7, 7, 7 ], [ 2, 2, 2 ],
-[ 17, 17, 17 ], [ 3, 3, 3 ],
-[ 9, 9, 9 ], [ 17, 17, 17 ]
+   [9, 9, 9], 
+   [3, 3, 3],
+  [7, 7, 7],
+  [8, 8, 8],
+  [11, 11, 11],
+  [7, 7, 7],
+  [7, 7, 7],
+  [11, 11, 11],
+  [3, 3, 3],
+  [2, 2, 2],
+
+  [9, 9, 9],
+  [2, 2, 2],
+  [11, 11, 11],
+  [8, 8, 8],
+  [9, 9, 9],
+  [2, 2, 2],
+  [3, 3, 3],
+  [8, 8, 8],
 ];
 
 @ccclass('Room')
@@ -107,6 +126,19 @@ export class Room extends Component {
     maxMoveY: number = 200;
     hintTween: Tween<any> = null;
     fisrtTapCount: number = 3;
+
+    @property({ group: { name: 'Hand Tut' }, tooltip: 'Giây chờ trước khi tay hiện lần đầu' })
+    tutStartDelay: number = 0;
+    @property({ group: { name: 'Hand Tut' }, tooltip: 'Giây đứng yên trước khi tay gợi ý lại' })
+    hintDelay: number = 5;
+    @property({ group: { name: 'Hand Tut' }, tooltip: 'Số con được chỉ khi tutTargets để trống (tự lấy theo loại Items[0])' })
+    tutCount: number = 3;
+    @property({ type: [Vec2], group: { name: 'Hand Tut' },
+        tooltip: 'Các con cá tay sẽ chỉ, theo thứ tự: x = số thứ tự bubble (Bubble_x), y = số thứ tự cá trong bubble (Fish_x_y). Để trống = tự chọn' })
+    tutTargets: Vec2[] = [];
+    @property({ group: { name: 'Hand Tut' }, tooltip: 'Tick để in ra console các con cá tutorial đang chọn' })
+    set checkTut(v: boolean) { this.logTutTargets(); }
+    get checkTut() { return false; }
 
     items: number[][] = [];
 
@@ -243,13 +275,45 @@ export class Room extends Component {
     initBubbles() {
         this.thingNode.destroyAllChildren();
         this.thingNode.removeAllChildren();
-        this.bubbles = BubbleData.map(([x, y, types]) => {
+        this.bubbles = BubbleData.map(([x, y, types], i) => {
             let bubble = pm.spawnType<Bubble>(PoolType.Bubble);
             bubble.node.parent = this.thingNode;
             bubble.node.position = v3(x, y, 0);
             bubble.node._objFlags = CCObjectFlags.DontSave;
             bubble.init(types);
+            // Đặt tên theo chỉ số trong BubbleData để tra ngược ra tutTargets (x = i, y = j) trong Hierarchy.
+            bubble.node.name = "Bubble_" + i;
+            bubble.things.forEach((t, j) => t.node.name = `Fish_${i}_${j}`);
             return bubble;
+        });
+    }
+
+    /** Các con cá tay tutorial sẽ chỉ: lấy theo tutTargets nếu có, không thì tutCount con đầu tiên của loại Items[0]. */
+    getTutTargets(): Thing[] {
+        if (this.tutTargets.length > 0) {
+            return this.tutTargets
+                .map(v => this.bubbles[v.x]?.things[v.y])
+                .filter(t => t);
+        }
+        let t0 = Items[0][0];
+        return this.things.filter(t => t.thingType == t0).slice(0, this.tutCount);
+    }
+
+    logTutTargets() {
+        const slotTypes = Items.slice(0, this.slotAmount).map(it => it[0]);
+        if (this.tutTargets.length == 0) {
+            console.log("tutTargets trống -> tự chỉ", this.tutCount, "con loại", Items[0][0]);
+            return;
+        }
+        this.tutTargets.forEach((v, k) => {
+            const t = this.bubbles[v.x]?.things[v.y];
+            if (!t) {
+                console.warn(`Tut #${k} (${v.x}, ${v.y}): KHÔNG TỒN TẠI`);
+                return;
+            }
+            const ok = slotTypes.includes(t.thingType);
+            const msg = `Tut #${k} ${t.node.name} type=${t.thingType}` + (ok ? "" : " -> không bể nào cần lúc đầu, tap sẽ rơi xuống ô chờ");
+            ok ? console.log(msg) : console.warn(msg);
         });
     }
 
@@ -537,7 +601,7 @@ export class Room extends Component {
     hint() {
         this.hintTween?.stop();
         this.hintTween = tween({})
-        .delay(5)
+        .delay(this.hintDelay)
         .call(() => {
             if(!ui.hand.active) {
                 if(this.taps.length == 0 && this.things.length > 0) {
@@ -598,8 +662,8 @@ export class Room extends Component {
         this.hideNode.active = true;
         // setTimeout(() => {     
             this.tappable = true;
-            this.zoomed = true;       
-            this.tap(null);
+            this.zoomed = true;
+            this.scheduleOnce(() => this.tap(null), this.tutStartDelay);
             // PhysicsSystem2D.instance.gravity = new Vec2(0, this.gravityY2);
         // }, 3000);
     }
@@ -838,11 +902,9 @@ export class Room extends Component {
 
         try {
             if(!EDITOR_NOT_IN_PREVIEW) {
-                this.taps = [];
-                let t0 = Items[0][0];
-                console.log(t0);                
-                let things = this.things.filter(t => t.thingType == t0);
-                this.taps = things.map(t => t.node).splice(0, 3);
+                this.taps = this.getTutTargets().map(t => t.node);
+                // số lần tap có tay dẫn = số con được chọn
+                this.fisrtTapCount = this.taps.length;
             }
             // .reverse();
             

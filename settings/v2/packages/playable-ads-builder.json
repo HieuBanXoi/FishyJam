@@ -11,5 +11,6 @@
   "channel_Unity": true,
   "googleUrl": "https://play.google.com/store/apps/details?id=com.fishy.jam.puzzle&hl=en&gl=US",
   "appleUrl": "https://play.google.com/store/apps/details?id=com.fishy.jam.puzzle&hl=en&gl=US",
-  "compressionQuality": 80
+  "compressionQuality": 80,
+  "channel_PureHTML": true
 }

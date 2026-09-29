@@ -1,4 +1,5 @@
-import { _decorator, assetManager, Component, Font, Node } from "cc";
+import { _decorator, assetManager, AudioSource, Component, Font, Node, UIOpacity } from "cc";
+import { PREVIEW } from "cc/env";
 const { ccclass, property } = _decorator;
 
 // openFullscreen();
@@ -7,19 +8,47 @@ export var gc: GameController;
 
 @ccclass("GameController")
 export class GameController extends Component {
+  @property({ type: String })
+  storeDialogMessage: string = "Open Store";
+  @property({ type: Boolean })
+  showStoreDialogInWebPreview: boolean = true;
+  @property([AudioSource]) audioSources: AudioSource[] = [];
+  @property(UIOpacity) UIOpacity: UIOpacity = null;
+  
 
   onLoad() {
     gc = this;
+    try{
+            if(PlayableSDK.channel == "PureHTML") {
+              console.log("PureHTML channel, mute audio and hide UI");
+                this.muteAudioClips();
+                if (this.UIOpacity) this.UIOpacity.opacity = 0;
+            }
+        } catch(error){
+
+        }
   }
   
   start() {
   }
 
   update(deltaTime: number) {}
-
+  private muteAudioClips(): void {
+    for (const clip of this.audioSources) {
+      if (clip) {
+        clip.stop();
+        clip.volume = 0;
+        clip.clip = null;
+      }
+    }
+  }
  
 
   redirectToStore() {    
+    if (PREVIEW && this.showStoreDialogInWebPreview && typeof window !== 'undefined') {
+            const shouldOpenStore = window.confirm(this.storeDialogMessage);
+            if (!shouldOpenStore) return;
+        }
     try {
       PlayableSDK.download();
       PlayableSDK.game_end();            
