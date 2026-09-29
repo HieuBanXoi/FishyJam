@@ -207,7 +207,7 @@ Objects:  {
 		}
 		TypeFlags: "Skeleton"
 	}
-	Model: 108814, "Model::body1", "LimbNode" {
+	Model: 108814, "Model::Spine_1", "LimbNode" {
 		Version: 232
 		Properties70:  {
 			P: "RotationActive", "bool", "", "",1
@@ -221,13 +221,13 @@ Objects:  {
 		Shading: T
 		Culling: "CullingOff"
 	}
-	NodeAttribute: 108960, "NodeAttribute::body1", "LimbNode" {
+	NodeAttribute: 108960, "NodeAttribute::Spine_1", "LimbNode" {
 		Properties70:  {
 			P: "Size", "double", "Number", "",1
 		}
 		TypeFlags: "Skeleton"
 	}
-	Model: 108815, "Model::body2", "LimbNode" {
+	Model: 108815, "Model::Spine_2", "LimbNode" {
 		Version: 232
 		Properties70:  {
 			P: "RotationActive", "bool", "", "",1
@@ -241,13 +241,13 @@ Objects:  {
 		Shading: T
 		Culling: "CullingOff"
 	}
-	NodeAttribute: 108961, "NodeAttribute::body2", "LimbNode" {
+	NodeAttribute: 108961, "NodeAttribute::Spine_2", "LimbNode" {
 		Properties70:  {
 			P: "Size", "double", "Number", "",1
 		}
 		TypeFlags: "Skeleton"
 	}
-	Model: 108816, "Model::body3", "LimbNode" {
+	Model: 108816, "Model::Spine_3", "LimbNode" {
 		Version: 232
 		Properties70:  {
 			P: "RotationActive", "bool", "", "",1
@@ -261,13 +261,13 @@ Objects:  {
 		Shading: T
 		Culling: "CullingOff"
 	}
-	NodeAttribute: 108962, "NodeAttribute::body3", "LimbNode" {
+	NodeAttribute: 108962, "NodeAttribute::Spine_3", "LimbNode" {
 		Properties70:  {
 			P: "Size", "double", "Number", "",1
 		}
 		TypeFlags: "Skeleton"
 	}
-	Model: 108817, "Model::tail1", "LimbNode" {
+	Model: 108817, "Model::Tail_1", "LimbNode" {
 		Version: 232
 		Properties70:  {
 			P: "RotationActive", "bool", "", "",1
@@ -281,13 +281,13 @@ Objects:  {
 		Shading: T
 		Culling: "CullingOff"
 	}
-	NodeAttribute: 108963, "NodeAttribute::tail1", "LimbNode" {
+	NodeAttribute: 108963, "NodeAttribute::Tail_1", "LimbNode" {
 		Properties70:  {
 			P: "Size", "double", "Number", "",1
 		}
 		TypeFlags: "Skeleton"
 	}
-	Model: 108818, "Model::tail2", "LimbNode" {
+	Model: 108818, "Model::Tail_2", "LimbNode" {
 		Version: 232
 		Properties70:  {
 			P: "RotationActive", "bool", "", "",1
@@ -301,13 +301,13 @@ Objects:  {
 		Shading: T
 		Culling: "CullingOff"
 	}
-	NodeAttribute: 108964, "NodeAttribute::tail2", "LimbNode" {
+	NodeAttribute: 108964, "NodeAttribute::Tail_2", "LimbNode" {
 		Properties70:  {
 			P: "Size", "double", "Number", "",1
 		}
 		TypeFlags: "Skeleton"
 	}
-	Model: 108819, "Model::tail_end", "LimbNode" {
+	Model: 108819, "Model::Tail_2_end", "LimbNode" {
 		Version: 232
 		Properties70:  {
 			P: "RotationActive", "bool", "", "",1
@@ -321,7 +321,7 @@ Objects:  {
 		Shading: T
 		Culling: "CullingOff"
 	}
-	NodeAttribute: 108965, "NodeAttribute::tail_end", "LimbNode" {
+	NodeAttribute: 108965, "NodeAttribute::Tail_2_end", "LimbNode" {
 		Properties70:  {
 			P: "Size", "double", "Number", "",1
 		}
@@ -407,7 +407,7 @@ Objects:  {
 		}
 		TypeFlags: "Skeleton"
 	}
-	Model: 108824, "Model::plv_upp2", "LimbNode" {
+	Model: 108824, "Model::Fin_1_T_B", "LimbNode" {
 		Version: 232
 		Properties70:  {
 			P: "RotationActive", "bool", "", "",1
@@ -421,13 +421,13 @@ Objects:  {
 		Shading: T
 		Culling: "CullingOff"
 	}
-	NodeAttribute: 108970, "NodeAttribute::plv_upp2", "LimbNode" {
+	NodeAttribute: 108970, "NodeAttribute::Fin_1_T_B", "LimbNode" {
 		Properties70:  {
 			P: "Size", "double", "Number", "",1
 		}
 		TypeFlags: "Skeleton"
 	}
-	Model: 108825, "Model::plv_upp2_end", "LimbNode" {
+	Model: 108825, "Model::Fin_1_T_B_end", "LimbNode" {
 		Version: 232
 		Properties70:  {
 			P: "RotationActive", "bool", "", "",1
@@ -441,13 +441,13 @@ Objects:  {
 		Shading: T
 		Culling: "CullingOff"
 	}
-	NodeAttribute: 108971, "NodeAttribute::plv_upp2_end", "LimbNode" {
+	NodeAttribute: 108971, "NodeAttribute::Fin_1_T_B_end", "LimbNode" {
 		Properties70:  {
 			P: "Size", "double", "Number", "",1
 		}
 		TypeFlags: "Skeleton"
 	}
-	Model: 108826, "Model::plv_dwn", "LimbNode" {
+	Model: 108826, "Model::Fin_1_B_M", "LimbNode" {
 		Version: 232
 		Properties70:  {
 			P: "RotationActive", "bool", "", "",1
@@ -461,13 +461,13 @@ Objects:  {
 		Shading: T
 		Culling: "CullingOff"
 	}
-	NodeAttribute: 108972, "NodeAttribute::plv_dwn", "LimbNode" {
+	NodeAttribute: 108972, "NodeAttribute::Fin_1_B_M", "LimbNode" {
 		Properties70:  {
 			P: "Size", "double", "Number", "",1
 		}
 		TypeFlags: "Skeleton"
 	}
-	Model: 108827, "Model::plv_dwn_end", "LimbNode" {
+	Model: 108827, "Model::Fin_1_B_M_end", "LimbNode" {
 		Version: 232
 		Properties70:  {
 			P: "RotationActive", "bool", "", "",1
@@ -481,13 +481,13 @@ Objects:  {
 		Shading: T
 		Culling: "CullingOff"
 	}
-	NodeAttribute: 108973, "NodeAttribute::plv_dwn_end", "LimbNode" {
+	NodeAttribute: 108973, "NodeAttribute::Fin_1_B_M_end", "LimbNode" {
 		Properties70:  {
 			P: "Size", "double", "Number", "",1
 		}
 		TypeFlags: "Skeleton"
 	}
-	Model: 108828, "Model::plv_upp1", "LimbNode" {
+	Model: 108828, "Model::Fin_1_T_F", "LimbNode" {
 		Version: 232
 		Properties70:  {
 			P: "RotationActive", "bool", "", "",1
@@ -501,13 +501,13 @@ Objects:  {
 		Shading: T
 		Culling: "CullingOff"
 	}
-	NodeAttribute: 108974, "NodeAttribute::plv_upp1", "LimbNode" {
+	NodeAttribute: 108974, "NodeAttribute::Fin_1_T_F", "LimbNode" {
 		Properties70:  {
 			P: "Size", "double", "Number", "",1
 		}
 		TypeFlags: "Skeleton"
 	}
-	Model: 108829, "Model::plv_upp1_end", "LimbNode" {
+	Model: 108829, "Model::Fin_1_T_F_end", "LimbNode" {
 		Version: 232
 		Properties70:  {
 			P: "RotationActive", "bool", "", "",1
@@ -521,7 +521,7 @@ Objects:  {
 		Shading: T
 		Culling: "CullingOff"
 	}
-	NodeAttribute: 108975, "NodeAttribute::plv_upp1_end", "LimbNode" {
+	NodeAttribute: 108975, "NodeAttribute::Fin_1_T_F_end", "LimbNode" {
 		Properties70:  {
 			P: "Size", "double", "Number", "",1
 		}
@@ -547,7 +547,7 @@ Objects:  {
 		}
 		TypeFlags: "Skeleton"
 	}
-	Model: 108831, "Model::head", "LimbNode" {
+	Model: 108831, "Model::Head", "LimbNode" {
 		Version: 232
 		Properties70:  {
 			P: "RotationActive", "bool", "", "",1
@@ -561,7 +561,7 @@ Objects:  {
 		Shading: T
 		Culling: "CullingOff"
 	}
-	NodeAttribute: 108977, "NodeAttribute::head", "LimbNode" {
+	NodeAttribute: 108977, "NodeAttribute::Head", "LimbNode" {
 		Properties70:  {
 			P: "Size", "double", "Number", "",1
 		}
@@ -607,7 +607,7 @@ Objects:  {
 		}
 		TypeFlags: "Skeleton"
 	}
-	Model: 108834, "Model::left_side_plv_1", "LimbNode" {
+	Model: 108834, "Model::Fin_1_M_L", "LimbNode" {
 		Version: 232
 		Properties70:  {
 			P: "RotationActive", "bool", "", "",1
@@ -621,13 +621,13 @@ Objects:  {
 		Shading: T
 		Culling: "CullingOff"
 	}
-	NodeAttribute: 108980, "NodeAttribute::left_side_plv_1", "LimbNode" {
+	NodeAttribute: 108980, "NodeAttribute::Fin_1_M_L", "LimbNode" {
 		Properties70:  {
 			P: "Size", "double", "Number", "",1
 		}
 		TypeFlags: "Skeleton"
 	}
-	Model: 108835, "Model::left_side_plv_2", "LimbNode" {
+	Model: 108835, "Model::Fin_2_M_L", "LimbNode" {
 		Version: 232
 		Properties70:  {
 			P: "RotationActive", "bool", "", "",1
@@ -641,13 +641,13 @@ Objects:  {
 		Shading: T
 		Culling: "CullingOff"
 	}
-	NodeAttribute: 108981, "NodeAttribute::left_side_plv_2", "LimbNode" {
+	NodeAttribute: 108981, "NodeAttribute::Fin_2_M_L", "LimbNode" {
 		Properties70:  {
 			P: "Size", "double", "Number", "",1
 		}
 		TypeFlags: "Skeleton"
 	}
-	Model: 108836, "Model::left_side_plv_3", "LimbNode" {
+	Model: 108836, "Model::Fin_3_M_L", "LimbNode" {
 		Version: 232
 		Properties70:  {
 			P: "RotationActive", "bool", "", "",1
@@ -661,13 +661,13 @@ Objects:  {
 		Shading: T
 		Culling: "CullingOff"
 	}
-	NodeAttribute: 108982, "NodeAttribute::left_side_plv_3", "LimbNode" {
+	NodeAttribute: 108982, "NodeAttribute::Fin_3_M_L", "LimbNode" {
 		Properties70:  {
 			P: "Size", "double", "Number", "",1
 		}
 		TypeFlags: "Skeleton"
 	}
-	Model: 108837, "Model::left_side_plv_end", "LimbNode" {
+	Model: 108837, "Model::Fin_3_M_L_end", "LimbNode" {
 		Version: 232
 		Properties70:  {
 			P: "RotationActive", "bool", "", "",1
@@ -681,13 +681,13 @@ Objects:  {
 		Shading: T
 		Culling: "CullingOff"
 	}
-	NodeAttribute: 108983, "NodeAttribute::left_side_plv_end", "LimbNode" {
+	NodeAttribute: 108983, "NodeAttribute::Fin_3_M_L_end", "LimbNode" {
 		Properties70:  {
 			P: "Size", "double", "Number", "",1
 		}
 		TypeFlags: "Skeleton"
 	}
-	Model: 108838, "Model::right_side_plv_1", "LimbNode" {
+	Model: 108838, "Model::Fin_1_M_R", "LimbNode" {
 		Version: 232
 		Properties70:  {
 			P: "RotationActive", "bool", "", "",1
@@ -701,13 +701,13 @@ Objects:  {
 		Shading: T
 		Culling: "CullingOff"
 	}
-	NodeAttribute: 108984, "NodeAttribute::right_side_plv_1", "LimbNode" {
+	NodeAttribute: 108984, "NodeAttribute::Fin_1_M_R", "LimbNode" {
 		Properties70:  {
 			P: "Size", "double", "Number", "",1
 		}
 		TypeFlags: "Skeleton"
 	}
-	Model: 108839, "Model::right_side_plv_2", "LimbNode" {
+	Model: 108839, "Model::Fin_2_M_R", "LimbNode" {
 		Version: 232
 		Properties70:  {
 			P: "RotationActive", "bool", "", "",1
@@ -721,13 +721,13 @@ Objects:  {
 		Shading: T
 		Culling: "CullingOff"
 	}
-	NodeAttribute: 108985, "NodeAttribute::right_side_plv_2", "LimbNode" {
+	NodeAttribute: 108985, "NodeAttribute::Fin_2_M_R", "LimbNode" {
 		Properties70:  {
 			P: "Size", "double", "Number", "",1
 		}
 		TypeFlags: "Skeleton"
 	}
-	Model: 108840, "Model::right_side_plv_3", "LimbNode" {
+	Model: 108840, "Model::Fin_3_M_R", "LimbNode" {
 		Version: 232
 		Properties70:  {
 			P: "RotationActive", "bool", "", "",1
@@ -741,13 +741,13 @@ Objects:  {
 		Shading: T
 		Culling: "CullingOff"
 	}
-	NodeAttribute: 108986, "NodeAttribute::right_side_plv_3", "LimbNode" {
+	NodeAttribute: 108986, "NodeAttribute::Fin_3_M_R", "LimbNode" {
 		Properties70:  {
 			P: "Size", "double", "Number", "",1
 		}
 		TypeFlags: "Skeleton"
 	}
-	Model: 108841, "Model::right_side_plv_end", "LimbNode" {
+	Model: 108841, "Model::Fin_3_M_R_end", "LimbNode" {
 		Version: 232
 		Properties70:  {
 			P: "RotationActive", "bool", "", "",1
@@ -761,13 +761,13 @@ Objects:  {
 		Shading: T
 		Culling: "CullingOff"
 	}
-	NodeAttribute: 108987, "NodeAttribute::right_side_plv_end", "LimbNode" {
+	NodeAttribute: 108987, "NodeAttribute::Fin_3_M_R_end", "LimbNode" {
 		Properties70:  {
 			P: "Size", "double", "Number", "",1
 		}
 		TypeFlags: "Skeleton"
 	}
-	Model: 108842, "Model::left_dwn_plv_1", "LimbNode" {
+	Model: 108842, "Model::Fin_1_B_L", "LimbNode" {
 		Version: 232
 		Properties70:  {
 			P: "RotationActive", "bool", "", "",1
@@ -781,13 +781,13 @@ Objects:  {
 		Shading: T
 		Culling: "CullingOff"
 	}
-	NodeAttribute: 108988, "NodeAttribute::left_dwn_plv_1", "LimbNode" {
+	NodeAttribute: 108988, "NodeAttribute::Fin_1_B_L", "LimbNode" {
 		Properties70:  {
 			P: "Size", "double", "Number", "",1
 		}
 		TypeFlags: "Skeleton"
 	}
-	Model: 108843, "Model::left_dwn_plv_2", "LimbNode" {
+	Model: 108843, "Model::Fin_2_B_L", "LimbNode" {
 		Version: 232
 		Properties70:  {
 			P: "RotationActive", "bool", "", "",1
@@ -801,13 +801,13 @@ Objects:  {
 		Shading: T
 		Culling: "CullingOff"
 	}
-	NodeAttribute: 108989, "NodeAttribute::left_dwn_plv_2", "LimbNode" {
+	NodeAttribute: 108989, "NodeAttribute::Fin_2_B_L", "LimbNode" {
 		Properties70:  {
 			P: "Size", "double", "Number", "",1
 		}
 		TypeFlags: "Skeleton"
 	}
-	Model: 108844, "Model::left_dwn_plv_end", "LimbNode" {
+	Model: 108844, "Model::Fin_2_B_L_end", "LimbNode" {
 		Version: 232
 		Properties70:  {
 			P: "RotationActive", "bool", "", "",1
@@ -821,13 +821,13 @@ Objects:  {
 		Shading: T
 		Culling: "CullingOff"
 	}
-	NodeAttribute: 108990, "NodeAttribute::left_dwn_plv_end", "LimbNode" {
+	NodeAttribute: 108990, "NodeAttribute::Fin_2_B_L_end", "LimbNode" {
 		Properties70:  {
 			P: "Size", "double", "Number", "",1
 		}
 		TypeFlags: "Skeleton"
 	}
-	Model: 108845, "Model::right_dwn_plv_1", "LimbNode" {
+	Model: 108845, "Model::Fin_1_B_R", "LimbNode" {
 		Version: 232
 		Properties70:  {
 			P: "RotationActive", "bool", "", "",1
@@ -841,13 +841,13 @@ Objects:  {
 		Shading: T
 		Culling: "CullingOff"
 	}
-	NodeAttribute: 108991, "NodeAttribute::right_dwn_plv_1", "LimbNode" {
+	NodeAttribute: 108991, "NodeAttribute::Fin_1_B_R", "LimbNode" {
 		Properties70:  {
 			P: "Size", "double", "Number", "",1
 		}
 		TypeFlags: "Skeleton"
 	}
-	Model: 108846, "Model::right_dwn_plv_2", "LimbNode" {
+	Model: 108846, "Model::Fin_2_B_R", "LimbNode" {
 		Version: 232
 		Properties70:  {
 			P: "RotationActive", "bool", "", "",1
@@ -861,13 +861,13 @@ Objects:  {
 		Shading: T
 		Culling: "CullingOff"
 	}
-	NodeAttribute: 108992, "NodeAttribute::right_dwn_plv_2", "LimbNode" {
+	NodeAttribute: 108992, "NodeAttribute::Fin_2_B_R", "LimbNode" {
 		Properties70:  {
 			P: "Size", "double", "Number", "",1
 		}
 		TypeFlags: "Skeleton"
 	}
-	Model: 108847, "Model::right_dwn_plv_end", "LimbNode" {
+	Model: 108847, "Model::Fin_2_B_R_end", "LimbNode" {
 		Version: 232
 		Properties70:  {
 			P: "RotationActive", "bool", "", "",1
@@ -881,7 +881,7 @@ Objects:  {
 		Shading: T
 		Culling: "CullingOff"
 	}
-	NodeAttribute: 108993, "NodeAttribute::right_dwn_plv_end", "LimbNode" {
+	NodeAttribute: 108993, "NodeAttribute::Fin_2_B_R_end", "LimbNode" {
 		Properties70:  {
 			P: "Size", "double", "Number", "",1
 		}

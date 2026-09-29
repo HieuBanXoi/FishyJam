@@ -48,12 +48,19 @@ export class Thing extends PoolMember {
 
     }
 
-    setMeshMat() {        
-        let mesh = this.getComponentInChildren(MeshRenderer);
-        // console.log(mesh);
+    setMeshMat() {
         // let mat = room.mat.getClone(this.thingType);
         let mat = room.mat.mats[this.thingType];
-        mesh && !mesh.material && mesh.setSharedMaterial(mat, 0);
+        if(!mat) return;
+        // Model có thể tách thành nhiều MeshRenderer (vd SK_Fish18: 3 SkinnedMeshRenderer) và mỗi mesh có thể có
+        // nhiều submesh (vd cá Fishdom: vây / thân / mắt / răng) - gán material của Mats cho mọi slot đang để
+        // trống, slot nào đã gán sẵn material thì giữ nguyên.
+        this.getComponentsInChildren(MeshRenderer).forEach(mesh => {
+            let count = mesh.mesh ? mesh.mesh.struct.primitives.length : 1;
+            for(let i = 0; i < count; i++) {
+                if(!mesh.sharedMaterials[i]) mesh.setSharedMaterial(mat, i);
+            }
+        });
     }
 
 
@@ -93,18 +100,15 @@ export class Thing extends PoolMember {
     }
 
     onHightlight() {
-        let mesh = this.getComponentInChildren(MeshRenderer);
-        if(mesh) {
-            mesh.material.setProperty("lineWidth", 600000);
-        }
+        this.getComponentsInChildren(MeshRenderer).forEach(mesh => {
+            mesh.materials.forEach(m => m?.setProperty("lineWidth", 600000));
+        });
     }
 
     offHightlight() {
-        let mesh = this.getComponentInChildren(MeshRenderer);
-        if(mesh) {
-            mesh.material.setProperty("lineWidth", 0);
-        }
-
+        this.getComponentsInChildren(MeshRenderer).forEach(mesh => {
+            mesh.materials.forEach(m => m?.setProperty("lineWidth", 0));
+        });
     }
 
     

@@ -222,6 +222,8 @@ export class Mats extends Component {
                     CLAMP_BRIGHTNESS : this.clamBrightness,
                     ENABLE_GLOW: this.enableGlow,
                     USE_ALBEDO_MAP: this.useTexture && this.textures[i] !== undefined,
+                    // texture có kênh alpha (vd vây cá Fishdom vẽ trên mặt phẳng trong suốt) -> cắt bỏ phần trong suốt
+                    USE_ALPHA_TEST: this.useTexture && this.textures[i]?.getPixelFormat() === Texture2D.PixelFormat.RGBA8888,
                     USE_NORMAL_MAP: this.useNormalMap && this.normalMaps[i] !== undefined
                 }
             }
