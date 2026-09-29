@@ -14,15 +14,22 @@ export class GameController extends Component {
   showStoreDialogInWebPreview: boolean = true;
   @property([AudioSource]) audioSources: AudioSource[] = [];
   @property(UIOpacity) UIOpacity: UIOpacity = null;
-  
+  @property([Node]) nodesToHide: Node[] = [];
+
+  /** Đang chạy kênh PureHTML - UI đọc cờ này để bỏ bàn tay hướng dẫn (UI.handTap không bật tay lên nữa). */
+  isPureHTML: boolean = false;
 
   onLoad() {
     gc = this;
     try{
             if(PlayableSDK.channel == "PureHTML") {
               console.log("PureHTML channel, mute audio and hide UI");
+                this.isPureHTML = true;
                 this.muteAudioClips();
                 if (this.UIOpacity) this.UIOpacity.opacity = 0;
+                for (const node of this.nodesToHide) {
+                  if (node) node.active = false;
+                }
             }
         } catch(error){
 

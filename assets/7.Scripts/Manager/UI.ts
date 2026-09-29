@@ -5,6 +5,7 @@ import { SoundType } from './SoundManager';
 import { ipm } from './InputManager';
 import { AppLovinAnalytics } from '../Tool/AppLovinAnalytics';
 import { room } from '../Gameplay/Room';
+import { gc } from '../Tool/GameController';
 const { ccclass, property } = _decorator;
 
 export enum BindUIType {
@@ -301,6 +302,11 @@ export class UI extends Component {
 
     handTap(node: Node) {
         if(!node) return;
+        // Kênh PureHTML bỏ bàn tay hướng dẫn (tutorial lẫn gợi ý khi đứng yên).
+        if(gc?.isPureHTML) {
+            this.offHand();
+            return;
+        }
         this.current = node;
         let wpos = node.getWorldPosition();
         let lpos = this.hand.parent.inverseTransformPoint(v3(), wpos);
@@ -400,6 +406,8 @@ export class UI extends Component {
     }
 
     start() {
+        // Tay đang bật sẵn trong scene - tắt ngay từ đầu nếu là PureHTML, không đợi tới lần handTap đầu tiên.
+        if(gc?.isPureHTML) this.offHand();
     }
 
     update(dt: number) {
