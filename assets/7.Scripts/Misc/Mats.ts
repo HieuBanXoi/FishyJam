@@ -67,8 +67,9 @@ export class Mats extends Component {
             "brightness", 
             "contrast", 
             "saturation", 
-            "hue", 
-            "roughness", 
+            "hue",
+            "vibrance",
+            "roughness",
             "metallic", 
             "specularIntensity", 
             "fixedLighting", 
@@ -150,6 +151,8 @@ export class Mats extends Component {
     saturation: number = 1;
     @property({slide: true, range: [-180, 180], step: 1})
     hue: number = 0;
+    @property({slide: true, range: [-1, 2], step: 0.01, tooltip: "Độ tươi: tăng bão hoà cho vùng màu nhạt nhiều hơn vùng đã đậm - tươi hơn mà không bị choé như saturation"})
+    vibrance: number = 0;
     @property({slide: true, range: [0, 1], step: 0.01})
     roughness: number = 0.9;
     @property({slide: true, range: [0, 1], step: 0.01})
@@ -237,6 +240,7 @@ export class Mats extends Component {
         m.setProperty("contrast", this.contrast);
         m.setProperty("saturation", this.saturation);
         m.setProperty("hue", this.hue);
+        m.setProperty("vibrance", this.vibrance);
         m.setProperty("light", this.light);
         m.setProperty("ao", this.ao);
 

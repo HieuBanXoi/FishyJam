@@ -74,6 +74,26 @@
       ],
       "subMetas": {}
     },
+    "43c71": {
+      "importer": "gltf-embeded-image",
+      "uuid": "ef9b525b-4925-4222-b1b7-a221762cf0f8@43c71",
+      "displayName": "",
+      "id": "43c71",
+      "name": "file1.image",
+      "userData": {
+        "gltfIndex": 0,
+        "fixAlphaTransparencyArtifacts": true,
+        "hasAlpha": true,
+        "type": "texture"
+      },
+      "ver": "1.0.3",
+      "imported": true,
+      "files": [
+        ".json",
+        ".png"
+      ],
+      "subMetas": {}
+    },
     "d241e": {
       "importer": "gltf-mesh",
       "uuid": "ef9b525b-4925-4222-b1b7-a221762cf0f8@d241e",
