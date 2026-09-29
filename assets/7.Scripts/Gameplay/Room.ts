@@ -1,4 +1,4 @@
-import { _decorator, Animation, CCObjectFlags, Component, EventKeyboard, EventTouch, Input, input, instantiate, JsonAsset, KeyCode, MeshRenderer, misc, Node, PhysicsSystem, PhysicsSystem2D, Sprite, Tween, tween, UITransform, v2, v3, Vec2, Vec3 } from 'cc';
+import { _decorator, Animation, CCInteger, CCObjectFlags, Component, EventKeyboard, EventTouch, Input, input, instantiate, JsonAsset, KeyCode, MeshRenderer, misc, Node, PhysicsSystem, PhysicsSystem2D, Sprite, Tween, tween, UITransform, v2, v3, Vec2, Vec3 } from 'cc';
 import { Thing } from './Thing';
 import { Slot } from './Slot';
 import { ipm } from '../Manager/InputManager';
@@ -30,37 +30,29 @@ export var room: Room = null;
  */
 export const BubbleData: 
 [number, number, number[]][] = 
-[[132.428,1268.46,[19,2]],[-621.029,874.37,[18,9,8]],[620.997,1242.781,[18,3,11]],[-331.329,1268.474,[9,2]],[311.746,840.762,[18,11]],[710.886,827.523,[2]],[710.774,492.52,[11]],[-147.621,672.359,[2,3,18]],[245.951,381.656,[11,8]],[-226.381,189.451,[19,19]],[620.976,67.396,[3,9,2]],[-646.47,385.848,[7,7]],[125.572,0.849,[11]],[-646.417,-77.964,[19,18]],[-181.644,-297.852,[2,3,18]],[-620.956,-566.574,[2,3,8]],[342.884,-253.975,[8]],[101.306,-697.127,[3,9]],[-602.293,-1099.642,[11,8,3,3]],[-56.128,-1180.229,[9,7,8,2]],[602.341,-613.586,[7,7,3,2]],[495.364,-1155.148,[19,19,7,9]]] 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+ [[132.428,1268.46,[9,19]],[-621.029,874.37,[17,17,18]],[620.997,1242.781,[19,19,17]],[-331.329,1268.474,[9,9]],[311.746,840.762,[18,18]],[710.886,827.523,[7]],[710.774,492.52,[3]],[-147.621,672.359,[7,7,3]],[245.951,381.656,[7,7]],[-226.381,189.451,[16,16]],[620.976,67.396,[16,8,8]],[-646.47,385.848,[3,7]],[125.572,0.849,[8]],[-646.417,-77.964,[11,11]],[-181.644,-297.852,[19,19,19]],[-620.956,-566.574,[11,11,11]],[342.884,-253.975,[11]],[101.306,-697.127,[18,18]],[-602.293,-1099.642,[2,2,2,8]],[-56.128,-1180.229,[9,3,3,3]],[602.341,-613.586,[2,2,2,18]],[495.364,-1155.148,[8,8,9,9]]] 
 
 
 
 export const Items = [
-    [ 18, 18, 18 ], 
-  [ 9, 9, 9 ],    [ 9, 9, 9 ], 
-  [ 2, 2, 2 ],    [ 19, 19, 19 ], 
-  [ 2, 2, 2 ],    [ 3, 3, 3 ], 
-  [ 7, 7, 7 ],    [ 2, 2, 2 ], 
-  [ 11, 11, 11 ], [ 8, 8, 8 ], 
-  [ 7, 7, 7 ],    
-  [ 3, 3, 3 ],    [ 8, 8, 8 ], 
-  [ 11, 11, 11 ], [ 3, 3, 3 ], 
-  [ 18, 18, 18 ], [ 19, 19, 19 ] 
-
+  [9, 9, 9],
+  [19, 19, 19],
+  [17, 17, 17],
+  [18, 18, 18],
+  [7, 7, 7],
+  [3, 3, 3],
+  [7, 7, 7],
+  [16, 16, 16],
+  [8, 8, 8],
+  [11, 11, 11],
+  [19, 19, 19],
+  [11, 11, 11],
+  [2, 2, 2],
+  [18, 18, 18],
+  [2, 2, 2],
+  [8, 8, 8],
+  [9, 9, 9],
+  [3, 3, 3],
 ];
 
 @ccclass('Room')
@@ -266,10 +258,10 @@ export class Room extends Component {
     }
 
     bubbles: Bubble[] = [];
-    initBubbles() {
+    initBubbles(data: [number, number, number[]][] = BubbleData) {
         this.thingNode.destroyAllChildren();
         this.thingNode.removeAllChildren();
-        this.bubbles = BubbleData.map(([x, y, types], i) => {
+        this.bubbles = data.map(([x, y, types], i) => {
             let bubble = pm.spawnType<Bubble>(PoolType.Bubble);
             bubble.node.parent = this.thingNode;
             bubble.node.position = v3(x, y, 0);
@@ -343,34 +335,80 @@ export class Room extends Component {
 
     /** Tương tự randomBubles() nhưng lấy vị trí + số cá (size) từ các bubble ĐANG CÓ SẴN trong scene (giữ nguyên,
      * không random), chỉ tính lại types theo fishTypes. Tổng số cá cần gán chia thành từng nhóm 3 con (khớp sức
-     * chứa tối đa 1 slot) - mỗi nhóm 3 con liên tiếp nhận 1 loại, xoay vòng theo fishTypes; phần dư không đủ 1
-     * nhóm 3 thì bỏ (ví dụ totalFish=20, fishTypes=[0,1,2,3] -> 20 = 3*6 + 2: 6 nhóm liên tục nhận loại
-     * 0,1,2,3,0,1, 2 con dư cuối không được gán loại). */
-    randomFromAvailableBubbles(fishTypes: number[] = [0, 1, 2]): [number, number, number[]][] {
+     * chứa tối đa 1 slot) - mỗi nhóm 3 con nhận 1 loại, xoay vòng theo fishTypes; phần dư không đủ 1 nhóm 3 thì bỏ
+     * (ví dụ totalFish=20, fishTypes=[0,1,2,3] -> 20 = 3*6 + 2: 6 nhóm nhận loại 0,1,2,3,0,1, 2 con dư không được
+     * gán loại).
+     *
+     * Thứ tự các nhóm (đã xáo) chính là Items - thứ tự bể nhận loại - nên in ra cả BubbleData lẫn Items khớp nhau.
+     * difficulty quyết định cá được xếp theo đúng thứ tự người chơi cần đến đâu:
+     *  - 0: bubble trên cao (y lớn) chứa cá theo đúng thứ tự Items (3 con nhóm 1, 3 con nhóm 2...) -> cá phía trên
+     *    luôn thuộc bể đang mở, bấm bừa phía trên lúc nào cũng ăn được cá;
+     *  - 1: gần như xáo ngẫu nhiên hoàn toàn (như bản cũ);
+     *  - ở giữa: mỗi con cá bị xê dịch ngẫu nhiên tối đa difficulty × tổng số cá vị trí so với thứ tự lý tưởng. */
+    randomFromAvailableBubbles(fishTypes: number[] = [0, 1, 2], difficulty: number = this.difficulty,
+        firstItems: number[] = this.firstItems): [number, number, number[]][] {
         const bubbles = this.thingNode.getComponentsInChildren(Bubble);
         const sizes = bubbles.map(b => b.getComponentsInChildren(Thing).length);
         const totalFish = sizes.reduce((sum, n) => sum + n, 0);
 
         const GROUP_SIZE = 3;
         const groupCount = Math.floor(totalFish / GROUP_SIZE);
-        var typeStream: number[] = [];
-        for (let g = 0; g < groupCount; g++) {
-            const type = fishTypes[g % fishTypes.length];
-            for (let i = 0; i < GROUP_SIZE; i++) typeStream.push(type);
+        let pool: number[] = [];
+        for (let g = 0; g < groupCount; g++) pool.push(fishTypes[g % fishTypes.length]);
+
+        // Các nhóm đầu cố định theo firstItems, lấy ra khỏi pool; phần còn lại xáo ngẫu nhiên xếp sau.
+        const head: number[] = [];
+        for (const t of firstItems.slice(0, groupCount)) {
+            if (!this.node.getChildByName("Fish")?.children[t]?.children.length) {
+                console.warn(`genBubleFromAvai: firstItems loại ${t} chưa có model trong Room/Fish/SK_Fish${t}, cá sẽ không hiện.`);
+            }
+            let idx = pool.indexOf(t);
+            if (idx < 0) {
+                // Loại này đã hết nhóm trong pool (không có trong fishTypes hoặc ghi nhiều lần hơn số nhóm được chia) -
+                // đổi 1 nhóm của loại đang nhiều nhóm nhất thành loại này để tổng số cá vẫn khớp số chỗ trong bubble.
+                const count = new Map<number, number>();
+                pool.forEach(p => count.set(p, (count.get(p) || 0) + 1));
+                const most = [...count.entries()].sort((a, b) => b[1] - a[1])[0];
+                if (!most) break;
+                idx = pool.indexOf(most[0]);
+                console.warn(`genBubleFromAvai: firstItems loại ${t} không còn nhóm trong fishTypes, lấy 1 nhóm của loại ${most[0]} đổi thành ${t}.`);
+            }
+            pool.splice(idx, 1);
+            head.push(t);
+        }
+        const groups = [...head, ...Ulis.shuffleArray(pool)];
+
+        // Thứ tự lý tưởng: đúng thứ tự Items, 3 con của từng nhóm liền nhau. Bể được thay lần lượt từng cái theo Items
+        // nên nhóm k + slotAmount chỉ mở khi đã đủ cá cho nhóm k - xếp liền theo nhóm đảm bảo cá phía trên luôn thuộc
+        // bể đang mở (mô phỏng bấm bừa 3 bubble trên cùng: trượt ~1%, không thua; xáo tự do theo đợt 4 nhóm thì trượt
+        // ~9%, thua ~6%).
+        const ideal: number[] = [];
+        groups.forEach(t => { for (let i = 0; i < GROUP_SIZE; i++) ideal.push(t); });
+
+        // Độ khó: cộng nhiễu vào vị trí mỗi con rồi sắp lại.
+        const spread = Math.max(0, difficulty) * ideal.length;
+        const typeStream = ideal
+            .map((t, i) => ({ t, k: i + Math.random() * spread }))
+            .sort((a, b) => a.k - b.k)
+            .map(e => e.t);
+
+        // Bubble trên cao (y lớn) nhận cá trước; bubble nào rơi đúng lúc typeStream cạn (do phần dư bị bỏ) nhận ít
+        // type hơn size gốc. Giữ nguyên thứ tự bubble trong BubbleData để chỉ số tutTargets không đổi.
+        const order = bubbles.map((_, i) => i).sort((a, b) => bubbles[b].node.position.y - bubbles[a].node.position.y);
+        const typesOf: number[][] = [];
+        let cursor = 0;
+        for (const i of order) {
+            typesOf[i] = typeStream.slice(cursor, cursor + sizes[i]);
+            cursor += sizes[i];
         }
 
-        typeStream = Ulis.shuffleArray(typeStream);
-
-        // Đổ typeStream tuần tự vào từng bubble theo đúng size hiện tại - bubble nào rơi đúng lúc typeStream cạn
-        // (do phần dư bị bỏ) sẽ nhận ít type hơn size gốc.
-        let cursor = 0;
-        const data = bubbles.map((b, i): [number, number, number[]] => {
-            const size = sizes[i];
-            const types = typeStream.slice(cursor, cursor + size);
-            cursor += size;
-            return [b.node.position.x, b.node.position.y, types];
-        });
-        console.log(JSON.stringify(data));
+        const round = (v: number) => Math.round(v * 1000) / 1000;
+        const data = bubbles.map((b, i): [number, number, number[]] => [round(b.node.position.x), round(b.node.position.y), typesOf[i]]);
+        const items = groups.map(t => Array(GROUP_SIZE).fill(t));
+        this.lastGenItems = items;
+        console.log(`genBubleFromAvai (difficulty ${difficulty}) - dán vào Room.ts:`);
+        console.log("BubbleData = " + JSON.stringify(data));
+        console.log("Items = " + JSON.stringify(items));
         return data;
     }
 
@@ -385,8 +423,19 @@ export class Room extends Component {
 
     @property([Number])
     fishTypes: number[] = [0, 1, 2];
-    @property
-    set genBubleFromAvai(v: boolean) { this.randomFromAvailableBubbles(this.fishTypes); }
+    @property({ slide: true, range: [0, 1], step: 0.05,
+        tooltip: 'Độ khó khi genBubleFromAvai: 0 = bubble phía trên luôn chứa đúng cá các bể đang cần (bấm bừa vẫn ăn), 1 = xáo ngẫu nhiên hoàn toàn' })
+    difficulty: number = 0;
+    @property({ type: [CCInteger],
+        tooltip: 'Thứ tự loại cá cố định cho các nhóm Items đầu khi genBubleFromAvai (mỗi phần tử = 1 nhóm 3 con, 4 phần tử đầu là 4 bể lúc bắt đầu). Để trống = xáo ngẫu nhiên toàn bộ' })
+    firstItems: number[] = [];
+    /** Items của lần genBubleFromAvai gần nhất (khớp với BubbleData vừa in ra). */
+    lastGenItems: number[][] = [];
+    @property({ tooltip: 'Gen lại loại cá cho các bubble đang có theo fishTypes + difficulty, hiện luôn trong Editor và in BubbleData + Items ra console để dán vào code' })
+    set genBubleFromAvai(v: boolean) {
+        const data = this.randomFromAvailableBubbles(this.fishTypes, this.difficulty, this.firstItems);
+        this.initBubbles(data);
+    }
     get genBubleFromAvai() { return false; }
 
     /**

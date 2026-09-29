@@ -1,5 +1,6 @@
 import { _decorator, Component, Node, Quat, Vec3, SkeletalAnimation, clamp, clamp01, lerp, inverseLerp, tween, Tween, v3 } from 'cc';
 import { Thing } from '../Thing';
+import { CustomFishAnim } from './CustomFishAnim';
 const { ccclass, property } = _decorator;
 
 const DEG2RAD = Math.PI / 180;
@@ -256,7 +257,17 @@ export class Fish extends Component {
 
     // ---------- Vòng đời ----------
 
+    /** Model có animator riêng (vd sao biển SK_Fish18 gắn StarfishAnim, cua SK_Fish17 gắn CrabAnim) thì giao hẳn cho nó, không dò bone cá thường. */
+    private custom: CustomFishAnim | null = null;
+
     build(): void {
+        this.custom = this.getComponentInChildren(CustomFishAnim);
+        if (this.custom) {
+            this.disableBakedSkinning();
+            this.custom.build();
+            this.built = true;
+            return;
+        }
         this.resetPose();
         this.bones.length = 0;
         this.hasPrev = false;
@@ -279,12 +290,14 @@ export class Fish extends Component {
     }
 
     resetPose(): void {
+        if (this.custom) { this.custom.resetPose(); return; }
         for (const b of this.bones) if (b.node && b.node.isValid) b.node.rotation = b.bindLocal;
     }
 
     /** Tiến một bước dt giây: đo tốc độ góc của node, tích luỹ pha theo Speed rồi đặt pose. */
     step(dt: number): void {
         if (!this.built) this.build();
+        if (this.custom) { this.custom.step(dt, this._speed); return; }
         if (dt <= 0) return;
         this.clock += dt;
         this.measureTurn(dt);

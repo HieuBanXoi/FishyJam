@@ -211,6 +211,20 @@
       "scenes": [
         "7c681aad-b03e-4cb5-a668-d12a8aeaaf12@def62"
       ]
+    },
+    "meshOptimize": {
+      "enable": true,
+      "vertexCache": true,
+      "vertexFetch": true,
+      "overdraw": true
+    },
+    "meshSimplify": {
+      "enable": true
+    },
+    "meshCompress": {
+      "enable": true,
+      "compress": true,
+      "quantize": true
     }
   }
 }

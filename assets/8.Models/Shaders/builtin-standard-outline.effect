@@ -33,19 +33,21 @@ CCEffect %{
         contrast: { value: 1.0, editor: { slide: true, range: [0.0, 2.0], step: 0.001 }  }
         saturation: { value: 1.0, editor: { slide: true, range: [0.0, 10.0], step: 0.001 } }
         hue:        { value: 0.0, editor: { slide: true, range: [-180.0, 180.0], step: 1.0 } }    # độ
+        vibrance:   { value: 0.0, editor: { slide: true, range: [-1.0, 2.0], step: 0.001, tooltip: "Tăng độ tươi cho vùng màu nhạt nhiều hơn vùng đã đậm - tươi hơn mà không bị choé" } }
         light: { value: 1.0, editor: { parent: FIXED_LIGHTING, slide: true, range: [0.0, 10.0], step: 0.01 } }
         ao:        { value: 1.0, editor: { parent: FIXED_LIGHTING, slide: true, range: [0.0, 10.0], step: 0.01 } }    # độ
         
         root: {value : [0.0, 0.0, 0.0, 0.0]}
         normal: {value : [0.0, 0.0, 0.0, 0.0]}
 
-        expansion: { value: 1.0, editor: { parent: ENABLE_EXPANSION, slide: true, range: [0.0, 10.0], step: 0.001 } }
+        expansion: { value: 1.0, editor: { parent: ENABLE_EXPANSION, slide: true, range: [0.0, 10000.0], step: 0.001 } }
 
         glowColor:     { value: [0.0, 1.0, 1.0, 1.0], linear: true, editor: { parent: ENABLE_GLOW, displayName: "Glow Color", type: color } }
         glowIntensity: { value: 1.0, target: glowParams.x, editor: { parent: ENABLE_GLOW, displayName: "Glow Intensity", slide: true, range: [0.0, 10.0], step: 0.001 } }
         glowSpeed:     { value: 2.0, target: glowParams.y, editor: { parent: ENABLE_GLOW, displayName: "Glow Speed", slide: true, range: [0.0, 20.0], step: 0.01 } }
         glowFresnel:   { value: 2.0, target: glowParams.z, editor: { parent: ENABLE_GLOW, displayName: "Glow Fresnel Power", slide: true, range: [0.1, 8.0], step: 0.01 } }
         glowPulseFloor: { value: 0.4, target: glowParams.w, editor: { parent: ENABLE_GLOW, displayName: "Glow Pulse Floor", tooltip: "0 = nhap nhay tat/mo hoan toan, 1 = sang dat khong nhap nhay", slide: true, range: [0.0, 1.0], step: 0.001 } }
+        glowTexture:   { value: white, editor: { parent: ENABLE_GLOW, displayName: "Glow Texture" } }
 
         transEdgePower: { value: 2.0, target: edgeParams.x, editor: { parent: ENABLE_TRANS_EDGE, displayName: "Trans Edge Power", tooltip: "So mu falloff: cang lon vien tan bien cang nhanh/hep", slide: true, range: [0.1, 8.0], step: 0.01 } }
         transEdgeMin:   { value: 0.0, target: edgeParams.y, editor: { parent: ENABLE_TRANS_EDGE, displayName: "Trans Edge Min Alpha", tooltip: "Alpha con lai o dung mep silhouette: 0 = trong suot hoan toan", slide: true, range: [0.0, 1.0], step: 0.001 } }
@@ -273,6 +275,7 @@ CCProgram shared-ubos %{
     float saturation;
     float hue;
     float expansion;
+    float vibrance;
   };
 }%
 
@@ -379,6 +382,9 @@ CCProgram surface-fragment %{
     uniform sampler2D anisotropyMap;
     uniform sampler2D anisotropyMapNearestFilter;
   #endif
+  #if ENABLE_GLOW
+    uniform sampler2D glowTexture;
+  #endif
 
   #pragma define OCCLUSION_CHANNEL          r
   #pragma define ROUGHNESS_CHANNEL          g
@@ -397,7 +403,16 @@ CCProgram surface-fragment %{
     float gray = dot(color, vec3(0.299, 0.587, 0.114));
     return mix(vec3(gray), color, sat);
   }
-  
+
+  // Vibrance: màu càng nhạt (chênh lệch max - min giữa các kênh càng nhỏ) thì càng được tăng bão hoà nhiều,
+  // màu đã đậm gần như giữ nguyên -> tươi hơn mà không bị choé.
+  vec3 AdjustVibrance(vec3 color, float vib) {
+    float mx = max(color.r, max(color.g, color.b));
+    float mn = min(color.r, min(color.g, color.b));
+    float gray = dot(color, vec3(0.299, 0.587, 0.114));
+    return mix(vec3(gray), color, 1.0 + vib * (1.0 - clamp(mx - mn, 0.0, 1.0)));
+  }
+
   vec3 hueShift(vec3 color, float hueDeg) {
     float hue = radians(hueDeg); // convert deg → rad
     const vec3 k = vec3(0.57735, 0.57735, 0.57735);
@@ -415,6 +430,7 @@ CCProgram surface-fragment %{
 
   #pragma define-meta CLAMP_BRIGHTNESS
   #pragma define-meta ENABLE_TRANS_EDGE
+  #pragma define-meta USE_GLOW_TEXTURE 
   vec4 SurfacesFragmentModifyBaseColorAndTransparency()
   {
     vec4 baseColor = albedo;
@@ -436,26 +452,24 @@ CCProgram surface-fragment %{
 
     baseColor.rgb *= albedoScaleAndCutoff.xyz;
 
-    baseColor.rgb = hueShift(baseColor.rgb, hue);
-    // baseColor *= color;
+    // Chỉnh màu trong không gian sRGB (đều theo mắt nhìn: contrast xoay quanh xám trung tính thật, không bị tối
+    // vùng trung) rồi đổi lại linear. Kẹp về [0, 1] SAU khi chỉnh xong - nếu không, tăng saturation / contrast
+    // làm kênh màu âm hoặc vượt 1 (vd vàng -> xanh dương âm) khiến màu ngả hồng / cháy trắng sau tone mapping.
+    // Mặc định (hue 0, brightness 0, contrast 1, saturation 1, vibrance 0) cho ra đúng màu texture gốc.
+    vec3 adj = LinearToSRGB(max(baseColor.rgb, vec3(0.0)));
+    adj = hueShift(adj, hue);
     // Độ sáng
-    baseColor.rgb += brightness;
-
-    #if CLAMP_BRIGHTNESS
-      baseColor.r = baseColor.r < 0.0 ? 0.0 : baseColor.r; 
-      baseColor.g = baseColor.g < 0.0 ? 0.0 : baseColor.g; 
-      baseColor.b = baseColor.b < 0.0 ? 0.0 : baseColor.b; 
-      baseColor.r = baseColor.r > 1.0 ? 1.0 : baseColor.r; 
-      baseColor.g = baseColor.g > 1.0 ? 1.0 : baseColor.g; 
-      baseColor.b = baseColor.b > 1.0 ? 1.0 : baseColor.b; 
-    #endif
-    
-
+    adj += brightness;
     // Độ tương phản
-    baseColor.rgb = ((baseColor.rgb - 0.5) * contrast + 0.5);
-
+    adj = (adj - 0.5) * contrast + 0.5;
     // Độ bão hòa
-    baseColor.rgb = AdjustSaturation(baseColor.rgb, saturation);
+    adj = AdjustSaturation(adj, saturation);
+    // Độ tươi (tăng bão hoà có chọn lọc)
+    adj = AdjustVibrance(adj, vibrance);
+    #if CLAMP_BRIGHTNESS
+      adj = clamp(adj, 0.0, 1.0);
+    #endif
+    baseColor.rgb = SRGBToLinear(max(adj, vec3(0.0)));
 
     
     #if ENABLE_GLOW
@@ -468,9 +482,15 @@ CCProgram surface-fragment %{
       float pulse = mix(glowParams.w, 1.0, 0.5 + 0.5 * sin(cc_time.x * glowParams.y));
       float glowAmount = fresnel * pulse;
 
+      vec3 glowTint = SRGBToLinear(glowColor.rgb);
+
+      #if USE_GLOW_TEXTURE 
+        glowTint = SRGBToLinear(texture(glowTexture, ALBEDO_UV).rgb);
+      #endif
+
       // material transparent co alpha thap => cong mau glow vao baseColor va day alpha len theo vien
       // de glow khong bi mo/mat do bi nhan voi alpha thap khi blend
-      baseColor.rgb += SRGBToLinear(glowColor.rgb) * glowParams.x * glowAmount;
+      baseColor.rgb += glowTint * glowParams.x * glowAmount;
       baseColor.a = max(baseColor.a, glowAmount);
     #endif
 
@@ -621,11 +641,11 @@ CCProgram surface-fragment %{
   {
 
     #if FIXED_LIGHTING  
-      surfaceData.specularIntensity = 0.0;
-      surfaceData.roughness = 1.0;
-      surfaceData.metallic = 0.0;
+      // surfaceData.specularIntensity = 0.0;
+      // surfaceData.roughness = 1.0;
+      // surfaceData.metallic = 0.0;
       surfaceData.ao = 1.0;
-      surfaceData.emissive = vec3(0.0);
+      // surfaceData.emissive = vec3(0.0);
     #endif
     
 
