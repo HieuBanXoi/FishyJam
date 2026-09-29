@@ -1,0 +1,216 @@
+{
+  "ver": "2.3.14",
+  "importer": "fbx",
+  "imported": true,
+  "uuid": "7c681aad-b03e-4cb5-a668-d12a8aeaaf12",
+  "files": [],
+  "subMetas": {
+    "1c8cb": {
+      "importer": "gltf-mesh",
+      "uuid": "7c681aad-b03e-4cb5-a668-d12a8aeaaf12@1c8cb",
+      "displayName": "",
+      "id": "1c8cb",
+      "name": "0.mesh",
+      "userData": {
+        "gltfIndex": 0,
+        "triangleCount": 1192
+      },
+      "ver": "1.1.1",
+      "imported": true,
+      "files": [
+        ".bin",
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "438fe": {
+      "importer": "gltf-skeleton",
+      "uuid": "7c681aad-b03e-4cb5-a668-d12a8aeaaf12@438fe",
+      "displayName": "",
+      "id": "438fe",
+      "name": "UnnamedSkeleton.skeleton",
+      "userData": {
+        "gltfIndex": 0,
+        "jointsLength": 59
+      },
+      "ver": "1.0.1",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "f93af": {
+      "importer": "gltf-embeded-image",
+      "uuid": "7c681aad-b03e-4cb5-a668-d12a8aeaaf12@f93af",
+      "displayName": "",
+      "id": "f93af",
+      "name": "yellow_surgeonfish.image",
+      "userData": {
+        "gltfIndex": 0,
+        "fixAlphaTransparencyArtifacts": true,
+        "hasAlpha": true,
+        "type": "texture"
+      },
+      "ver": "1.0.3",
+      "imported": true,
+      "files": [
+        ".json",
+        ".png"
+      ],
+      "subMetas": {}
+    },
+    "6487a": {
+      "importer": "texture",
+      "uuid": "7c681aad-b03e-4cb5-a668-d12a8aeaaf12@6487a",
+      "displayName": "",
+      "id": "6487a",
+      "name": "yellow_surgeonfish.texture",
+      "userData": {
+        "wrapModeS": "repeat",
+        "wrapModeT": "repeat",
+        "minfilter": "linear",
+        "magfilter": "linear",
+        "mipfilter": "none",
+        "anisotropy": 0,
+        "isUuid": true,
+        "imageUuidOrDatabaseUri": "7c681aad-b03e-4cb5-a668-d12a8aeaaf12@f93af"
+      },
+      "ver": "1.0.22",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "6acbf": {
+      "importer": "gltf-material",
+      "uuid": "7c681aad-b03e-4cb5-a668-d12a8aeaaf12@6acbf",
+      "displayName": "",
+      "id": "6acbf",
+      "name": "mat_transparent.material",
+      "userData": {
+        "gltfIndex": 0
+      },
+      "ver": "1.0.14",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "e74e1": {
+      "importer": "gltf-material",
+      "uuid": "7c681aad-b03e-4cb5-a668-d12a8aeaaf12@e74e1",
+      "displayName": "",
+      "id": "e74e1",
+      "name": "mat_opaque.material",
+      "userData": {
+        "gltfIndex": 1
+      },
+      "ver": "1.0.14",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "f2b90": {
+      "importer": "gltf-material",
+      "uuid": "7c681aad-b03e-4cb5-a668-d12a8aeaaf12@f2b90",
+      "displayName": "",
+      "id": "f2b90",
+      "name": "mat_overlap_eyes.material",
+      "userData": {
+        "gltfIndex": 2
+      },
+      "ver": "1.0.14",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "5a1a4": {
+      "importer": "gltf-material",
+      "uuid": "7c681aad-b03e-4cb5-a668-d12a8aeaaf12@5a1a4",
+      "displayName": "",
+      "id": "5a1a4",
+      "name": "mat_overlap_teeth.material",
+      "userData": {
+        "gltfIndex": 3
+      },
+      "ver": "1.0.14",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "def62": {
+      "importer": "gltf-scene",
+      "uuid": "7c681aad-b03e-4cb5-a668-d12a8aeaaf12@def62",
+      "displayName": "",
+      "id": "def62",
+      "name": "yellow_surgeonfish.prefab",
+      "userData": {
+        "gltfIndex": 0
+      },
+      "ver": "1.0.14",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    }
+  },
+  "userData": {
+    "imageMetas": [
+      {
+        "name": "yellow_surgeonfish",
+        "uri": "7c681aad-b03e-4cb5-a668-d12a8aeaaf12@f93af"
+      }
+    ],
+    "fbx": {
+      "smartMaterialEnabled": true
+    },
+    "lods": {
+      "enable": false,
+      "hasBuiltinLOD": false,
+      "options": [
+        {
+          "screenRatio": 0.25,
+          "faceCount": 1
+        },
+        {
+          "screenRatio": 0.125,
+          "faceCount": 0.25
+        },
+        {
+          "screenRatio": 0.01,
+          "faceCount": 0.1
+        }
+      ]
+    },
+    "assetFinder": {
+      "meshes": [
+        "7c681aad-b03e-4cb5-a668-d12a8aeaaf12@1c8cb"
+      ],
+      "skeletons": [
+        "7c681aad-b03e-4cb5-a668-d12a8aeaaf12@438fe"
+      ],
+      "textures": [
+        "7c681aad-b03e-4cb5-a668-d12a8aeaaf12@6487a"
+      ],
+      "materials": [
+        "7c681aad-b03e-4cb5-a668-d12a8aeaaf12@6acbf",
+        "7c681aad-b03e-4cb5-a668-d12a8aeaaf12@e74e1",
+        "7c681aad-b03e-4cb5-a668-d12a8aeaaf12@f2b90",
+        "7c681aad-b03e-4cb5-a668-d12a8aeaaf12@5a1a4"
+      ],
+      "scenes": [
+        "7c681aad-b03e-4cb5-a668-d12a8aeaaf12@def62"
+      ]
+    }
+  }
+}
