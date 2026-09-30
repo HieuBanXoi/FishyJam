@@ -46,6 +46,38 @@ export class Slot extends PoolMember {
         if (!this.fishMove) this.fishMove = this.getComponent(FishMove);
         if (!this.baseScale) this.baseScale = this.node.scale.clone();
         this.initTank();
+        this.initStars();
+    }
+
+    // ---------- Sao tiến độ: Star > Star.. (sao rỗng) + StarDone.. (sao sáng, tắt sẵn) ----------
+    // Mỗi con cá đáp vào bể bật 1 StarDone theo thứ tự tên StarDone, StarDone2, StarDone3 (trái -> phải -> giữa),
+    // bể đầy đổi loại mới thì tắt hết.
+    starDones: Node[] = [];
+    private starBaseScales: Vec3[] = [];
+
+    initStars() {
+        const root = this.node.getChildByName("Star");
+        this.starDones = root ? root.children.filter(c => c.name.startsWith("StarDone")) : [];
+        this.starDones.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+        this.starBaseScales = this.starDones.map(s => s.scale.clone());
+    }
+
+    resetStars() {
+        this.starDones.forEach((s, i) => {
+            Tween.stopAllByTarget(s);
+            s.setScale(this.starBaseScales[i]);
+            s.active = false;
+        });
+    }
+
+    lightStar(index: number) {
+        const s = this.starDones[index];
+        if (!s || s.active) return;
+        const base = this.starBaseScales[index];
+        s.active = true;
+        Tween.stopAllByTarget(s);
+        s.setScale(0, 0, 0);
+        tween(s).to(0.3, { scale: base.clone() }, { easing: 'backOut' }).start();
     }
 
     // ---------- Bể giả: Tank > TankBubble (Bubble giả) > Fish > TankFish0..N ----------
@@ -74,6 +106,7 @@ export class Slot extends PoolMember {
     /** Bể nhận loại cá mới: thay model mọi TankFish bằng đúng loại, ẩn hết, xếp chỗ bơi trong bể giả. */
     setupTank(type: number) {
         this.revealed = 0;
+        this.resetStars();
         if (!this.tankBubble) return;
         this.tankThings.forEach(t => {
             const f: any = t.getComponentInChildren("Fish");
@@ -104,6 +137,7 @@ export class Slot extends PoolMember {
     /** 1 con cá vừa bay vào bể: bật TankFish kế tiếp lên bơi. */
     revealTankFish() {
         const t = this.tankThings[this.revealed];
+        this.lightStar(this.revealed);
         this.revealed++;
         if (t) t.node.active = true;
     }
@@ -235,7 +269,8 @@ export class Slot extends PoolMember {
         else {
             s = v3(1, 1, 1).multiplyScalar(0.02 * room.boxFishScale / modelScale);
         }
-        thing.fish && thing.fish.moveToCenter();
+        // Cá bay vào bể xoay về đúng góc icon Avatar của bể (room.avatarEuler, lấy từ scene); ô chờ giữ góc mặc định.
+        thing.fish && (this.isSlot ? thing.fish.moveToCenter(0.3, room.avatarEuler) : thing.fish.moveToCenter());
 
         let pos = p.getWorldPosition();
         let npos = thing.node.getWorldPosition();

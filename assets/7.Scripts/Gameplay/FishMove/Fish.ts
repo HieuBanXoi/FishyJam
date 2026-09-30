@@ -183,10 +183,10 @@ export class Fish extends Component {
      * Tween mượt vị trí LOCAL của cá về gốc (0,0,0) - dùng khi cá bị tách khỏi hệ quản lý vị trí (ví dụ
      * `FishMove`) và cần về tư thế trung tính, thay vì set cứng `node.position = v3()` gây giật hình.
      */
-    moveToCenter(duration = 0.3): void {
+    moveToCenter(duration = 0.3, euler: Vec3 = v3(15, 50, 0)): void {
         this.moveTween?.stop();
         this.moveTween = tween(this.node)
-            .to(duration, { position: new Vec3(), eulerAngles: v3(0, 50, 0) }, { easing: 'quadOut' })
+            .to(duration, { position: new Vec3(), eulerAngles: euler.clone() }, { easing: 'quadOut' })
             .start();
     }
 
