@@ -1,4 +1,4 @@
-import { _decorator, Animation, CCObject, clamp, clamp01, Collider2D, Component, Label, Layers, lerp, Material, math, Node, RigidBody2D, Size, sp, Sprite, Tween, tween, v3, Vec3 } from 'cc';
+import { _decorator, Animation, CCObject, clamp, clamp01, Collider2D, Component, director, Label, Layers, lerp, Material, math, MeshRenderer, Node, RigidBody2D, Size, sp, Sprite, Tween, tween, UITransform, v3, Vec3 } from 'cc';
 import { PoolMember, PoolType } from '../Pool/PoolMember';
 import { Thing } from './Thing';
 import { FishMove } from './FishMove/FishMove';
@@ -383,7 +383,74 @@ export class Slot extends PoolMember {
     }
 
     update(deltaTime: number) {
-        
+
+    }
+
+    // ---------- Icon cá trên khung nhãn: tự co giãn + căn giữa phần khung bên phải chữ "0/3" ----------
+    // Mỗi loại cá khác kích thước / điểm gốc nên đo hình thật (world bounds của model) rồi chỉnh. Đo sau 1 frame
+    // (model skinned mới có bounds theo pose) và tính theo tỉ lệ / chênh lệch nên không phụ thuộc slot đang thu / phóng.
+    fitAvatarPending: boolean = false;
+    private fitStableFrames: number = 0;
+
+    lateUpdate() {
+        if (!this.fitAvatarPending) return;
+        if (!this.avatar || !this.avatar.isValid) {
+            this.fitAvatarPending = false;
+            return;
+        }
+        // Bounds của model cập nhật trễ 1 frame -> chỉ đo khi bể đứng yên ở scale gốc 2 frame liền (không đo lúc đang
+        // thu về 0 / phóng ra khi đổi bể, lúc nảy khi cá đáp).
+        const still = this.baseScale && Math.abs(this.node.scale.x - this.baseScale.x) < 1e-4;
+        this.fitStableFrames = still ? this.fitStableFrames + 1 : 0;
+        if (this.fitStableFrames < 2) return;
+        if (this.fitAvatar()) this.fitAvatarPending = false;
+    }
+
+    /** Hộp đích (world): cả khung nhãn chừa lề room.avatarFitPadding (tính theo tỉ lệ slot) - icon nằm giữa khung,
+     * chữ "0/3" (vẽ trên icon) đè lên một chút cũng được. */
+    private avatarBox(): { cx: number, cy: number, w: number, h: number } | null {
+        const frame = this.node.children.find(c => c.name.startsWith("slot_frame"));
+        const fut = frame && frame.getComponent(UITransform);
+        if (!fut) return null;
+        const fb = fut.getBoundingBoxToWorld();
+        const pad = room.avatarFitPadding * Math.abs(this.node.worldScale.x);
+        const x0 = fb.xMin + pad, x1 = fb.xMax - pad, y0 = fb.yMin + pad, y1 = fb.yMax - pad;
+        if (x1 <= x0 || y1 <= y0) return null;
+        return { cx: (x0 + x1) / 2, cy: (y0 + y1) / 2, w: x1 - x0, h: y1 - y0 };
+    }
+
+    /** Co giãn + dịch icon cho vừa, nằm giữa hộp đích. false nếu chưa đo được (thử lại frame sau). */
+    fitAvatar(): boolean {
+        const box = this.avatarBox();
+        if (!box) return true;
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        this.avatar.getComponentsInChildren(MeshRenderer).forEach(mr => {
+            // Ép model tính lại bounds theo transform / pose hiện tại (mặc định engine chỉ tính lúc render frame sau) ->
+            // căn được ngay lúc tạo icon, không phải hiện kích thước cũ rồi mới giật về.
+            try { mr.model && mr.model.updateTransform(director.getTotalFrames()); } catch (e) { }
+            const wb = mr.model && mr.model.worldBounds;
+            if (!wb) return;
+            minX = Math.min(minX, wb.center.x - wb.halfExtents.x);
+            maxX = Math.max(maxX, wb.center.x + wb.halfExtents.x);
+            minY = Math.min(minY, wb.center.y - wb.halfExtents.y);
+            maxY = Math.max(maxY, wb.center.y + wb.halfExtents.y);
+        });
+        const fw = maxX - minX, fh = maxY - minY;
+        if (!(fw > 0) || !(fh > 0) || !isFinite(fw) || !isFinite(fh)) return false;
+
+        // avatarFitScale: bounds cá skinned rộng hơn hình thật nên cho phép phóng thêm (1 = vừa khít bounds).
+        const k = Math.min(box.w / fw, box.h / fh) * (room.avatarFitScale > 0 ? room.avatarFitScale : 1);
+        const n = this.avatar;
+        const pivot = n.worldPosition.clone();
+        // Scale quanh pivot của node: tâm hình mới = pivot + k * (tâm cũ - pivot) -> dịch cho trùng tâm hộp đích.
+        const cx = pivot.x + k * ((minX + maxX) / 2 - pivot.x);
+        const cy = pivot.y + k * ((minY + maxY) / 2 - pivot.y);
+        n.setScale(n.scale.clone().multiplyScalar(k));
+        n.setWorldPosition(pivot.x + (box.cx - cx), pivot.y + (box.cy - cy), pivot.z);
+        // Viền tính theo scale model -> bật lại cho đúng độ dày sau khi co giãn.
+        const t = n.getComponent(Thing);
+        t && t.applyRestOutline(room.avatarOutlineWidth, room.avatarOutlineColor);
+        return true;
     }
 }
 

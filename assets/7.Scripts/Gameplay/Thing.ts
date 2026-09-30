@@ -153,6 +153,9 @@ export class Thing extends PoolMember {
     // Ngoài lúc hover, cá trong bubble có 1 lớp viền mỏng mặc định (room.outlineWidth / room.outlineColor, mặc định đen).
     private highlighted: boolean = false;
     private restOutlined: boolean = false;
+    // Viền "nghỉ" (khi không hover) - mặc định theo room.outlineWidth / outlineColor, icon cá trên bể dùng màu riêng.
+    private restWidth: number = 0;
+    private restColor: Color = null;
 
     onHightlight() {
         if (this.highlighted || !room) return;
@@ -163,16 +166,19 @@ export class Thing extends PoolMember {
     offHightlight() {
         if (!this.highlighted) return;
         this.highlighted = false;
-        if (this.restOutlined) this.setOutline(room.outlineWidth, room.outlineColor);
+        if (this.restOutlined) this.setOutline(this.restWidth, this.restColor);
         else this.resetOutline();
     }
 
-    /** Bật viền mỏng mặc định (gọi khi cá vào bubble). outlineWidth = 0 thì không có viền. */
-    applyRestOutline() {
+    /** Bật viền mỏng khi không hover: mặc định room.outlineWidth / outlineColor (cá trong bubble); truyền px / col để
+     * dùng viền riêng (vd icon cá trên bể). px = 0 thì không có viền. */
+    applyRestOutline(px: number = room ? room.outlineWidth : 0, col: Color = room ? room.outlineColor : null) {
         if (!room) return;
-        this.restOutlined = room.outlineWidth > 0;
+        this.restWidth = px;
+        this.restColor = col;
+        this.restOutlined = px > 0 && !!col;
         if (this.highlighted) return;
-        if (this.restOutlined) this.setOutline(room.outlineWidth, room.outlineColor);
+        if (this.restOutlined) this.setOutline(px, col);
         else this.resetOutline();
     }
 
