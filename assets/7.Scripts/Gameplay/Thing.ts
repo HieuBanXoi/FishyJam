@@ -1,4 +1,4 @@
-import { _decorator, Animation, color, Component, Enum, EventTouch, instantiate, Layers, Material, MeshRenderer, Node, Size, SkinnedMeshRenderer, sp, Sprite, SpriteFrame, Tween, tween, UIRenderer, UITransform, v3, Vec3 } from 'cc';
+import { _decorator, Animation, Color, color, Component, Enum, EventTouch, instantiate, Layers, Material, MeshRenderer, Node, Size, SkinnedMeshRenderer, sp, Sprite, SpriteFrame, Tween, tween, UIRenderer, UITransform, v3, Vec3 } from 'cc';
 import { PoolMember } from '../Pool/PoolMember';
 import { room } from './Room';
 import Ulis from '../Misc/Ulis';
@@ -150,26 +150,47 @@ export class Thing extends PoolMember {
     // theo world scale của node gốc model để viền dày đúng room.highlightWidth pixel, màu room.highlightColor. Tắt outline
     // thì trả lineWidth / baseColor về đúng giá trị material dùng chung (giữ lại instance: Cocos 3.8 setSharedMaterial
     // cùng material là no-op, không bỏ được instance).
+    // Ngoài lúc hover, cá trong bubble có 1 lớp viền mỏng mặc định (room.outlineWidth / room.outlineColor, mặc định đen).
     private highlighted: boolean = false;
+    private restOutlined: boolean = false;
 
     onHightlight() {
         if (this.highlighted || !room) return;
         this.highlighted = true;
-        this.getComponentsInChildren(MeshRenderer).forEach(mr => {
-            const lw = this.outlineWidth(mr, room.highlightWidth);
-            if (lw <= 0) return;
-            mr.sharedMaterials.forEach((m, i) => {
-                if (!m) return;
-                const inst = mr.getMaterialInstance(i);
-                inst.setProperty('lineWidth', lw);
-                inst.setProperty('baseColor', room.highlightColor);
-            });
-        });
+        this.setOutline(room.highlightWidth, room.highlightColor);
     }
 
     offHightlight() {
         if (!this.highlighted) return;
         this.highlighted = false;
+        if (this.restOutlined) this.setOutline(room.outlineWidth, room.outlineColor);
+        else this.resetOutline();
+    }
+
+    /** Bật viền mỏng mặc định (gọi khi cá vào bubble). outlineWidth = 0 thì không có viền. */
+    applyRestOutline() {
+        if (!room) return;
+        this.restOutlined = room.outlineWidth > 0;
+        if (this.highlighted) return;
+        if (this.restOutlined) this.setOutline(room.outlineWidth, room.outlineColor);
+        else this.resetOutline();
+    }
+
+    private setOutline(px: number, col: Color) {
+        this.getComponentsInChildren(MeshRenderer).forEach(mr => {
+            const lw = this.outlineWidth(mr, px);
+            if (lw <= 0) return;
+            mr.sharedMaterials.forEach((m, i) => {
+                if (!m) return;
+                const inst = mr.getMaterialInstance(i);
+                inst.setProperty('lineWidth', lw);
+                inst.setProperty('baseColor', col);
+            });
+        });
+    }
+
+    /** Trả viền về đúng material dùng chung (Mats). */
+    private resetOutline() {
         this.getComponentsInChildren(MeshRenderer).forEach(mr => {
             if (!mr.isValid) return;
             mr.sharedMaterials.forEach((m, i) => {
@@ -186,7 +207,7 @@ export class Thing extends PoolMember {
     /** lineWidth để viền dày `px` đơn vị world. Shader đẩy viền sau skinning, tức trong không gian node gốc của model
      * (model.transform: skinningRoot với mesh skinned, chính node với mesh thường) -> chia cho world scale của node đó. */
     private outlineWidth(mr: MeshRenderer, px: number): number {
-        const tf = (mr.model && mr.model.transform) || mr.node;
+        const tf = (mr.model && mr.model.transform) || (mr as SkinnedMeshRenderer).skinningRoot || mr.node;
         const s = Math.abs(tf.worldScale.x);
         if (!(s > 0)) return 0;
         return px / (0.001 * s);

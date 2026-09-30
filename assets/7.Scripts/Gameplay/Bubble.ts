@@ -94,6 +94,7 @@ export class Bubble extends PoolMember {
             }
             thing.modelScale = fishScale;
             thing.bubble = this;
+            thing.applyRestOutline();
             this.things.push(thing);
         })
         if(this.fishMove) {

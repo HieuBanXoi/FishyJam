@@ -887,6 +887,10 @@ export class Room extends Component {
     highlightWidth: number = 10;
     @property({ group: { name: 'Highlight' }, min: 0.5, step: 0.05, tooltip: 'Bán kính bắt cá dưới tay, nhân với vùng chạm (Touch) của cá' })
     hoverRadius: number = 1.2;
+    @property({ group: { name: 'Highlight' }, tooltip: 'Màu viền mỏng mặc định của cá trong bubble khi chưa hover' })
+    outlineColor: Color = new Color(0, 0, 0, 255);
+    @property({ group: { name: 'Highlight' }, min: 0, step: 0.5, tooltip: 'Độ dày viền mỏng mặc định (pixel màn hình thiết kế). 0 = không có viền' })
+    outlineWidth: number = 3;
 
     hThing: Thing = null;
 
