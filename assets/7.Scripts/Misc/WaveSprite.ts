@@ -50,12 +50,20 @@ export class WaveSprite extends Component {
         this.material = this.sprite.getMaterialInstance(0);
         if(this.bindTouch)  {
             this.node.on(Node.EventType.TOUCH_START, this.onTouchStart, this);
-            // Node nhận TOUCH_START giữ luôn cả lượt chạm -> move không tới được Room nữa. Không bindMove thì vẫn chuyển
-            // move sang Room.onDragOver để giữ chuột bắt đầu từ khung / bể kính rồi lướt qua cá vẫn lấy được cá.
-            if(!this.bindMove) this.node.on(Node.EventType.TOUCH_MOVE, this.onDragMove, this);
+            // Node nhận TOUCH_START giữ luôn cả lượt chạm -> move / end không tới được Room nữa. Không bindMove thì vẫn
+            // chuyển sang Room (outline cá dưới tay, nhấc tay chọn) để bắt đầu giữ từ khung / bể kính / bubble vẫn chọn được cá.
+            if(!this.bindMove) {
+                this.node.on(Node.EventType.TOUCH_START, this.onDragMove, this);
+                this.node.on(Node.EventType.TOUCH_MOVE, this.onDragMove, this);
+                this.node.on(Node.EventType.TOUCH_END, this.onDragEnd, this);
+                this.node.on(Node.EventType.TOUCH_CANCEL, this.onDragEnd, this);
+            }
         }
         if(this.bindMove)  {
-            this.node.on(Node.EventType.TOUCH_MOVE, this.onTouchMove, this);    
+            // Nhấn xuống trên nền cũng outline luôn con cá dưới tay; hủy chạm cũng tính như nhấc tay.
+            this.node.on(Node.EventType.TOUCH_START, this.onTouchMove, this);
+            this.node.on(Node.EventType.TOUCH_CANCEL, this.onTouchEnd, this);
+            this.node.on(Node.EventType.TOUCH_MOVE, this.onTouchMove, this);
             this.node.on(Node.EventType.TOUCH_END 
             || Node.EventType.TOUCH_CANCEL, this.onTouchEnd, this);     
         
@@ -110,7 +118,10 @@ export class WaveSprite extends Component {
         room.onTouchMove2(event);
     }
     onDragMove(event: EventTouch) {
-        room?.onDragOver(event);
+        room?.onPointerMove(event);
+    }
+    onDragEnd(event: EventTouch) {
+        room?.onPointerUp(event);
     }
     onTouchEnd(event: EventTouch) {
         room.onTouchEnd2(event);

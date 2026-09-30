@@ -1,4 +1,4 @@
-import { _decorator, Animation, CCInteger, CCObjectFlags, Component, Enum, EventKeyboard, EventTouch, Input, input, instantiate, JsonAsset, KeyCode, MeshRenderer, misc, Node, PhysicsSystem, PhysicsSystem2D, Sprite, Tween, tween, UITransform, v2, v3, Vec2, Vec3 } from 'cc';
+import { _decorator, Animation, CCInteger, CCObjectFlags, Color, Component, Enum, EventKeyboard, EventTouch, Input, input, instantiate, JsonAsset, KeyCode, MeshRenderer, misc, Node, PhysicsSystem, PhysicsSystem2D, Sprite, Tween, tween, UITransform, v2, v3, Vec2, Vec3 } from 'cc';
 import { Thing } from './Thing';
 import { Slot } from './Slot';
 import { ipm } from '../Manager/InputManager';
@@ -877,66 +877,71 @@ export class Room extends Component {
         }       
     }
 
-    @property({ tooltip: 'Giữ chuột / ngón tay rồi lướt qua cá: con nào đang có bể cần thì bay vào bể luôn (click vẫn dùng được)' })
-    dragCollect: boolean = true;
+    // ---------- Chọn cá: nhấn / di tay -> hiện outline con cá dưới tay, nhấc tay -> chọn con đó (như click cũ) ----------
 
-    /** Đang giữ chuột và lướt tới vị trí event: con cá dưới con trỏ mà có bể đang cần thì cho bay vào bể như click.
-     * Cá không có bể cần thì bỏ qua (không rơi xuống ô chờ khi chỉ lướt qua). Gọi từ move toàn cục (bắt đầu giữ trên cá)
-     * lẫn move của nền (bắt đầu giữ trên nền). */
-    onDragOver(event: EventTouch) {
-        if (!this.dragCollect || !this.zoomed || this.lose || !event) return;
-        const pos = event.getUILocation();
+    @property({ tooltip: 'Bật: nhấn / di tay thì hiện outline con cá dưới tay, nhấc tay mới chọn con đó.\nTắt: chạm là chọn ngay như cũ.' })
+    dragCollect: boolean = true;
+    @property({ group: { name: 'Highlight' }, tooltip: 'Màu viền con cá đang được chỉ' })
+    highlightColor: Color = new Color(255, 255, 255, 255);
+    @property({ group: { name: 'Highlight' }, min: 0, step: 0.5, tooltip: 'Độ dày viền (pixel màn hình thiết kế), như nhau cho mọi loại cá' })
+    highlightWidth: number = 10;
+    @property({ group: { name: 'Highlight' }, min: 0.5, step: 0.05, tooltip: 'Bán kính bắt cá dưới tay, nhân với vùng chạm (Touch) của cá' })
+    hoverRadius: number = 1.2;
+
+    hThing: Thing = null;
+
+    /** Con cá trong bubble (chưa bay) gần điểm chạm nhất, trong bán kính vùng Touch * hoverRadius. */
+    findThingAt(pos: Vec2): Thing {
         const pos3 = v3(pos.x, pos.y, 0);
         let best: Thing = null, bestD = Infinity;
         for (const t of this.things) {
             if (!t.bubble || t.moving || t.waiting || !t.touch || !t.touch.activeInHierarchy) continue;
-            const slot = this.slots.find(s => s.thingType == t.thingType);
-            if (!slot || slot.added + slot.queue.length >= slot.maxAmount) continue;
             const w = t.touch.getWorldPosition();
             w.z = 0;
             const d = Vec3.distance(pos3, w);
             const ut = t.touch.getComponent(UITransform);
-            const r = ut ? t.touch.getWorldScale().x * ut.width / 2 : 0;
+            const r = ut ? t.touch.getWorldScale().x * ut.width / 2 * this.hoverRadius : 0;
             if (d < r && d < bestD) {
                 best = t;
                 bestD = d;
             }
         }
-        if (best) best.onTouchStart(event);
+        return best;
     }
 
-    hThing: Thing = null;
-    onTouchMove2(event: EventTouch) {
-        this.onDragOver(event);
-        let pos = event.getUILocation();
-        let neareast = this.getNearestThing(pos, 1.5);  
-        if(this.things.includes(this.hThing)) this.hThing?.offHightlight();  
-        if(neareast) {
-            this.hThing = neareast;
-            neareast.onHightlight();   
-        } else {
-            this.hThing = null;
-        }  
-        
+    setHover(t: Thing) {
+        if (t == this.hThing) return;
+        if (this.hThing && this.hThing.isValid) this.hThing.offHightlight();
+        this.hThing = t;
+        if (t) t.onHightlight();
     }
-    onTouchEnd2(event: EventTouch) {
-        // let pos = event.getUILocation();
-        // let neareast = this.getNearestThing(pos);   
-        // if(neareast) {
-        //     neareast.onHightlight();
-        // }
-        // Đã có lướt để lấy cá (onDragOver) -> nhả tay không tự đẩy con gần nhất đi nữa, tránh lỡ tay thả cá sai xuống ô chờ.
-        if(this.dragCollect) {
-            this.hThing = null;
+
+    /** Nhấn xuống / di tay (đang giữ): outline con cá dưới tay. Gọi từ node cá, khung / bể kính, nền và input toàn cục -
+     * trùng lặp không sao vì chỉ đổi con đang outline. */
+    onPointerMove(event: EventTouch) {
+        if (!this.dragCollect || !event) return;
+        if (!this.zoomed || this.lose) {
+            this.setHover(null);
             return;
         }
-        if(this.things.includes(this.hThing)) {
-            if(this.hThing) {
-                this.hThing.offHightlight();
-                this.hThing.onTouchStart(event);
-                this.hThing = null;
-            }
-        }
+        this.setHover(this.findThingAt(event.getUILocation()));
+    }
+
+    /** Nhấc tay: chọn con cá dưới điểm nhấc tay (con đang outline) - vào bể / ô chờ / rung như click cũ. */
+    onPointerUp(event: EventTouch) {
+        if (!this.dragCollect || !event) return;
+        const t = this.hThing ? this.findThingAt(event.getUILocation()) : null;
+        this.setHover(null);
+        if (!t || !t.isValid || !this.things.includes(t) || !t.bubble || t.moving) return;
+        if (!this.zoomed || this.lose) return;
+        t.onTouchStart(event);
+    }
+
+    onTouchMove2(event: EventTouch) {
+        this.onPointerMove(event);
+    }
+    onTouchEnd2(event: EventTouch) {
+        this.onPointerUp(event);
     }
 
     getSrc(index: number) {
@@ -1401,7 +1406,8 @@ export class Room extends Component {
     click: boolean = false;
     onTouchStart(event: EventTouch) {
         if(!event) return;
-        this.location = event.getUILocation(); 
+        this.onPointerMove(event);
+        this.location = event.getUILocation();
         if(this.s1 == null) {
             this.s1 = this.location.clone();
         } else if(this.s2 == null) {
@@ -1429,7 +1435,7 @@ export class Room extends Component {
 
         // return;
         if(!event) return;
-        this.onDragOver(event);
+        this.onPointerMove(event);
 
         let touches = event.getTouches();
         if(touches.length >= 2) {
@@ -1476,6 +1482,7 @@ export class Room extends Component {
 
     onTouchEnd(event: EventTouch) {
         if(!event) return;
+        this.onPointerUp(event);
         this.startPos = null;
         let out = event.getUILocation();
         if(this.s1 && this.s2) {
