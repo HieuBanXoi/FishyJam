@@ -19,6 +19,18 @@ export class GameController extends Component {
   /** Đang chạy kênh PureHTML - UI đọc cờ này để bỏ bàn tay hướng dẫn (UI.handTap không bật tay lên nữa). */
   isPureHTML: boolean = false;
 
+  /** Phát ra khi game bị dừng (đã chuyển sang store) - Room nghe để khoá gameplay. */
+  static readonly EVENT_STOP = "game-stop";
+  /** true sau khi redirectToStore được gọi: không cho chơi tiếp nữa. */
+  stopped: boolean = false;
+
+  /** Dừng game hẳn (chỉ 1 lần): các hệ gameplay nghe EVENT_STOP để khoá thao tác, dừng đồng hồ / spawn. */
+  stopGame() {
+    if (this.stopped) return;
+    this.stopped = true;
+    this.node.emit(GameController.EVENT_STOP);
+  }
+
   onLoad() {
     gc = this;
     try{
@@ -56,6 +68,8 @@ export class GameController extends Component {
             const shouldOpenStore = window.confirm(this.storeDialogMessage);
             if (!shouldOpenStore) return;
         }
+    // Đã chuyển sang store -> dừng game, người chơi không chơi tiếp được nữa (gọi từ bất cứ đâu đều áp dụng).
+    this.stopGame();
     try {
       PlayableSDK.download();
       PlayableSDK.game_end();            

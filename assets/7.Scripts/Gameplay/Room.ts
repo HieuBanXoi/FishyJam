@@ -15,6 +15,7 @@ import { Mats } from '../Misc/Mats';
 import { AppLovinAnalytics } from '../Tool/AppLovinAnalytics';
 import { Clock } from '../Manager/Clock';
 import { splitSum } from '../MatchAsset/Ulis';
+import { gc, GameController } from '../Tool/GameController';
 const { ccclass, property, executeInEditMode } = _decorator;
 
 
@@ -211,6 +212,7 @@ export class Room extends Component {
         this.zoom();
         // this.onFirst();
         this.schedule(this.onSchedule.bind(this), 0.5);
+        gc?.node.on(GameController.EVENT_STOP, this.stopGame, this);
 
         // PhysicsSystem2D.instance.gravity = new Vec2(0, this.gravityY);
         
@@ -586,8 +588,31 @@ export class Room extends Component {
         
     }
 
+    /** Game đã dừng (GameController.redirectToStore): không cho chơi tiếp. */
+    get isStopped(): boolean {
+        return !!(gc && gc.stopped);
+    }
+
+    private stoppedApplied: boolean = false;
+    /** Khoá gameplay khi đã chuyển sang store: dừng đồng hồ, tay gợi ý, outline; mọi lối vào chọn cá / spawn / hint đều
+     * kiểm tra isStopped nên gọi 1 lần là đủ (vẫn gọi lại từ các chốt chặn phòng khi chưa kịp nghe sự kiện). */
+    stopGame() {
+        if (this.stoppedApplied) return;
+        this.stoppedApplied = true;
+        this.clock?.stop();
+        this.hintTween?.stop();
+        this.taps = [];
+        ui?.offHand();
+        this.setHover(null);
+        this.things.forEach(t => t.offTouch());
+    }
+
     onSchedule() {
         // if(this.checkLose()) return;
+        if (this.isStopped) {
+            this.stopGame();
+            return;
+        }
 
         let boxes = this.boxes.filter(b => b.thing && !b.moving && !b.thing.waiting);
         let things = boxes.map(b => b.thing);
@@ -687,6 +712,10 @@ export class Room extends Component {
 
     tap(thing: Node) {
         if(!this.tappable) return;
+        if(this.isStopped) {
+            ui?.offHand();
+            return;
+        }
         if(thing) {
             let tt = thing.getComponent(Thing)
             let s = this.slots.find(s => s.thingType == tt.thingType);
@@ -709,6 +738,7 @@ export class Room extends Component {
 
     hint() {
         this.hintTween?.stop();
+        if (this.isStopped) return;
         this.hintTween = tween({})
         .delay(this.hintDelay)
         .call(() => {
@@ -924,7 +954,7 @@ export class Room extends Component {
      * trùng lặp không sao vì chỉ đổi con đang outline. */
     onPointerMove(event: EventTouch) {
         if (!this.dragCollect || !event) return;
-        if (!this.zoomed || this.lose) {
+        if (!this.zoomed || this.lose || this.isStopped) {
             this.setHover(null);
             return;
         }
@@ -937,7 +967,7 @@ export class Room extends Component {
         const t = this.hThing ? this.findThingAt(event.getUILocation()) : null;
         this.setHover(null);
         if (!t || !t.isValid || !this.things.includes(t) || !t.bubble || t.moving) return;
-        if (!this.zoomed || this.lose) return;
+        if (!this.zoomed || this.lose || this.isStopped) return;
         t.onTouchStart(event);
     }
 
@@ -1206,6 +1236,10 @@ export class Room extends Component {
 
     checkBox(thing: Thing, wpos: Vec3) {
         if(!this.zoomed) return;
+        if(this.isStopped) {
+            this.stopGame();
+            return;
+        }
         let thingyType = thing.thingType;
         let slot = this.slots.find(s => s.thingType == thingyType);
         if(slot && slot.added + slot.queue.length < slot.maxAmount) {
