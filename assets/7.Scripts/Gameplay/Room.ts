@@ -49,7 +49,7 @@ export const BubbleData:
 
 
 export const Items = 
-[[9,9,9],[11,11,11],[6,6,6],[1,1,1],[11,11,11],[1,1,1],[1,1,1],[6,6,6],[0,0,0],[16,16,16],[6,6,6],[3,3,3],[16,16,16],[3,3,3],[11,11,11],[9,9,9],[9,9,9],[11,11,11],[0,0,0],[6,6,6],[16,16,16],[3,3,3],[16,16,16],[0,0,0],[9,9,9],[0,0,0],[3,3,3],[0,0,0],[1,1,1]] 
+[[9,9,9],[11,11,11],[3,3,3],[6,6,6],[1,1,1],[11,11,11],[1,1,1],[1,1,1],[6,6,6],[0,0,0],[16,16,16],[6,6,6],[16,16,16],[3,3,3],[11,11,11],[9,9,9],[9,9,9],[11,11,11],[0,0,0],[6,6,6],[16,16,16],[3,3,3],[16,16,16],[0,0,0],[9,9,9],[0,0,0],[3,3,3],[0,0,0],[1,1,1]] 
 
 
 
@@ -924,6 +924,8 @@ export class Room extends Component {
     highlightWidth: number = 10;
     @property({ group: { name: 'Highlight' }, min: 0.5, step: 0.05, tooltip: 'Bán kính bắt cá dưới tay, nhân với vùng chạm (Touch) của cá' })
     hoverRadius: number = 1.2;
+    @property({ group: { name: 'Highlight' }, min: 0.5, step: 0.05, tooltip: 'Phóng to vùng chạm (node Touch) của cá trong bubble cho dễ bấm trúng. Vùng chồng nhau thì chọn con có tâm gần tay nhất. Áp dụng khi gen bubble' })
+    touchScale: number = 1.7;
     @property({ group: { name: 'Highlight' }, tooltip: 'Màu viền mỏng mặc định của cá trong bubble khi chưa hover' })
     outlineColor: Color = new Color(0, 0, 0, 255);
     @property({ group: { name: 'Highlight' }, min: 0, step: 0.5, tooltip: 'Độ dày viền mỏng mặc định (pixel màn hình thiết kế). 0 = không có viền' })

@@ -33,7 +33,7 @@
     {
       "tileScale": {
         "__type__": "cc.Vec2",
-        "x": 5,
+        "x": 3,
         "y": 3
       },
       "alpha": 0,

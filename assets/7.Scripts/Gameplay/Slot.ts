@@ -50,15 +50,14 @@ export class Slot extends PoolMember {
     }
 
     // ---------- Sao tiến độ: Star > Star.. (sao rỗng) + StarDone.. (sao sáng, tắt sẵn) ----------
-    // Mỗi con cá đáp vào bể bật 1 StarDone theo thứ tự tên StarDone, StarDone2, StarDone3 (trái -> phải -> giữa),
-    // bể đầy đổi loại mới thì tắt hết.
+    // Mỗi con cá đáp vào bể bật 1 StarDone theo vị trí từ trái sang phải, bể đầy đổi loại mới thì tắt hết.
     starDones: Node[] = [];
     private starBaseScales: Vec3[] = [];
 
     initStars() {
         const root = this.node.getChildByName("Star");
         this.starDones = root ? root.children.filter(c => c.name.startsWith("StarDone")) : [];
-        this.starDones.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+        this.starDones.sort((a, b) => a.position.x - b.position.x);
         this.starBaseScales = this.starDones.map(s => s.scale.clone());
     }
 

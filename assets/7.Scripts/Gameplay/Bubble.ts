@@ -90,7 +90,9 @@ export class Bubble extends PoolMember {
             if (thing.touch) {
                 const touch = thing.touch as any;
                 if (!touch.__baseScale) touch.__baseScale = touch.scale.clone();
-                touch.setScale(touch.__baseScale.clone().multiplyScalar(fishScale));
+                // room.touchScale: phóng to vùng chạm cho dễ bấm (chọn cá theo tâm gần nhất nên chồng nhau không sao).
+                const touchScale = room && room.touchScale > 0 ? room.touchScale : 1;
+                touch.setScale(touch.__baseScale.clone().multiplyScalar(fishScale * touchScale));
             }
             thing.modelScale = fishScale;
             thing.bubble = this;
