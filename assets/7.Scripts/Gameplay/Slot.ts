@@ -1,4 +1,4 @@
-import { _decorator, Animation, clamp, clamp01, Component, Label, Layers, lerp, Material, math, Node, Size, sp, Sprite, Tween, tween, v3, Vec3 } from 'cc';
+import { _decorator, Animation, CCObject, clamp, clamp01, Collider2D, Component, Label, Layers, lerp, Material, math, Node, RigidBody2D, Size, sp, Sprite, Tween, tween, v3, Vec3 } from 'cc';
 import { PoolMember, PoolType } from '../Pool/PoolMember';
 import { Thing } from './Thing';
 import { FishMove } from './FishMove/FishMove';
@@ -44,6 +44,83 @@ export class Slot extends PoolMember {
         let sps = this.node.getComponentsInChildren(Sprite);
         this.anim = this.node.getComponent(Animation);
         if (!this.fishMove) this.fishMove = this.getComponent(FishMove);
+        if (!this.baseScale) this.baseScale = this.node.scale.clone();
+        this.initTank();
+    }
+
+    // ---------- Bể giả: Tank > TankBubble (Bubble giả) > Fish > TankFish0..N ----------
+    // Mỗi con cá bay vào bể sẽ bật 1 TankFish lên bơi trong bể (đúng loại của bể). Bubble giả chỉ để hiển thị: không
+    // tham gia vật lý, không nằm trong room.bubbles / room.things nên không ảnh hưởng gen bubble / Items.
+
+    /** Scale gốc của bể trong scene - hiệu ứng nảy / thu về 0 rồi phóng ra đều quay về đúng giá trị này. */
+    baseScale: Vec3 = null;
+    tankBubble: Node = null;
+    tankThings: Thing[] = [];
+    revealed: number = 0;
+    bounceTween: Tween<Node> = null;
+
+    initTank() {
+        const tank = this.node.getChildByName("Tank");
+        const bubble = tank ? tank.getComponentInChildren("Bubble") : null;
+        this.tankBubble = bubble ? bubble.node : null;
+        this.tankThings = this.tankBubble ? this.tankBubble.getComponentsInChildren(Thing) : [];
+        if (!this.tankBubble) return;
+        const body = this.tankBubble.getComponent(RigidBody2D);
+        if (body) body.enabled = false;
+        const collider = this.tankBubble.getComponent(Collider2D);
+        if (collider) collider.enabled = false;
+    }
+
+    /** Bể nhận loại cá mới: thay model mọi TankFish bằng đúng loại, ẩn hết, xếp chỗ bơi trong bể giả. */
+    setupTank(type: number) {
+        this.revealed = 0;
+        if (!this.tankBubble) return;
+        this.tankThings.forEach(t => {
+            const f: any = t.getComponentInChildren("Fish");
+            if (!f) return;
+            [...f.node.children].forEach((c: Node) => { c.removeFromParent(); c.destroy(); });
+            const src: Node = room.getSrc(type);
+            src.parent = f.node;
+            src.position = v3(0, 0, 0);
+            src.eulerAngles = v3(0, 0, 0);
+            src.scale = v3(1, 1, 1);
+            src.active = true;
+            src._objFlags |= CCObject.Flags.DontSave;
+            // Model mới -> dò lại bone cho animator (Fish.init chỉ build 1 lần).
+            f.inited = true;
+            f.build();
+            f.setAnim(true);
+            t.thingType = type;
+            t.init(false);
+            t.node.active = false;
+        });
+        const fm = this.tankBubble.getComponent(FishMove);
+        if (fm) {
+            fm.unscheduleAllCallbacks();
+            fm.init();
+        }
+    }
+
+    /** 1 con cá vừa bay vào bể: bật TankFish kế tiếp lên bơi. */
+    revealTankFish() {
+        const t = this.tankThings[this.revealed];
+        this.revealed++;
+        if (t) t.node.active = true;
+    }
+
+    /** Hiệu ứng cá đáp vào bể: nảy tương đối theo scale gốc (clip SlotHightLight cũ đặt scale tuyệt đối 0.845) + particle. */
+    playLandFx() {
+        const base = this.baseScale || this.node.scale.clone();
+        this.bounceTween?.stop();
+        this.bounceTween = tween(this.node)
+            .to(0.25, { scale: base.clone().multiplyScalar(1.12) }, { easing: 'smooth' })
+            .to(0.25, { scale: base.clone() }, { easing: 'smooth' })
+            .start();
+        const p = this.node.getChildByName("Particle2D-002");
+        if (p) {
+            p.active = true;
+            this.scheduleOnce(() => { if (p.isValid) p.active = false; }, 0.48);
+        }
     }
 
     index: number = 0
@@ -146,14 +223,17 @@ export class Slot extends PoolMember {
         Ulis.addToParent(thing.node, p);
 
         let s = thing.node.getScale();
+        // Size cá trong bể / ô chờ chỉ theo room.slotFishScale / room.boxFishScale: chia lại hệ số model đã nhân lúc gen
+        // bubble (Thing.modelScale = room.bubbleFishScale) để cá to trong bubble không kéo theo to trong bể / ô chờ.
+        const modelScale = thing.modelScale > 0 ? thing.modelScale : 1;
         if(this.isSlot) {
             this.added += 1;
             // let wscale = this.avatar.getWorldScale();
             //  = thing.node.getWorldScale();
-            s = v3(1, 1, 1).multiplyScalar(0.035);
-        } 
-        else {            
-            s = v3(1, 1, 1).multiplyScalar(0.02);
+            s = v3(1, 1, 1).multiplyScalar(0.035 * room.slotFishScale / modelScale);
+        }
+        else {
+            s = v3(1, 1, 1).multiplyScalar(0.02 * room.boxFishScale / modelScale);
         }
         thing.fish && thing.fish.moveToCenter();
 
@@ -227,14 +307,15 @@ export class Slot extends PoolMember {
             if(this.isSlot) {
                 thing.fish?.setAnim(false);
                 thing.node.active = false;
+                this.revealTankFish();
                 sm.playSound(SoundType.LandRight);
                 callback && callback();
                 this.decreaseLabel();
                 if(before == this.added - 1 && this.added == this.amount) {
                     room.onFull(this);
+                } else {
+                    this.playLandFx();
                 }
-
-                this.getComponent(Animation)?.play();
 
             } else {
                 // console.log(thing.fish, this.fishMove);

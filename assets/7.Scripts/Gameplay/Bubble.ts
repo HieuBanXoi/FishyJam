@@ -41,9 +41,21 @@ export class Bubble extends PoolMember {
         const t = Math.min((data.length - 1) / (maxLen - 1), 1);
         let scale = minScale + (maxScale - minScale) * cEasing('circOut')(t);
         scale *= 0.78;
-        this.node.scale = v3(1, 1, 1).multiplyScalar(scale);
-        
+        // Cá trong bubble được phóng theo room.bubbleFishScale (xem Room.scaleBubbleFish) -> bubble, khoảng cách bơi và
+        // vùng chạm của cá phóng cùng hệ số để cá không tràn ra / chồng lên nhau.
+        const fishScale = room && room.bubbleFishScale > 0 ? room.bubbleFishScale : 1;
+        this.node.scale = v3(1, 1, 1).multiplyScalar(scale * fishScale);
+
         this.fishMove = this.getComponent(FishMove);
+        if (this.fishMove) {
+            // Bubble lấy từ pool nên dùng lại component: lưu giá trị gốc 1 lần rồi nhân, tránh nhân dồn qua các lần init.
+            const fm = this.fishMove as any;
+            if (!fm.__base) fm.__base = { radius: fm.radius, idleAmplitude: fm.idleAmplitude, bobAmplitude: fm.bobAmplitude, easeDistance: fm.easeDistance };
+            fm.radius = fm.__base.radius * fishScale;
+            fm.idleAmplitude = fm.__base.idleAmplitude * fishScale;
+            fm.bobAmplitude = fm.__base.bobAmplitude * fishScale;
+            fm.easeDistance = fm.__base.easeDistance * fishScale;
+        }
         // const poseRadius = this.fishMove.radius;
         // const poseStartAngle = Math.random() * Math.PI * 2;
         // let poses = data.map((_, i) => {
@@ -60,9 +72,12 @@ export class Bubble extends PoolMember {
             thing.node.parent = p;
             thing.node.position = v3();
             thing.node.eulerAngles = v3(0, 0, 0);
-            thing.node.scale = v3(1, 1, 1).multiplyScalar(1/scale);
+            // Bù toàn bộ scale của bubble (kể cả fishScale) để Thing giữ world scale 1 - cá to ra chỉ nhờ model đã nhân
+            // trong Room.scaleBubbleFish, không bị nhân 2 lần.
+            thing.node.scale = v3(1, 1, 1).multiplyScalar(1/(scale * fishScale));
             thing.thingType = d;
             let fish = room.getSrc(d);
+            room.scaleBubbleFish(fish);
             let f = thing.getComponentInChildren(Fish);
             fish.parent = f.node;
             fish.position = v3(0, 0, 0);
@@ -71,6 +86,13 @@ export class Bubble extends PoolMember {
             fish.active = true;
             f.init();
             thing.init();
+            // Vùng chạm (node Touch) to theo cá; lưu scale gốc lần đầu để không nhân dồn khi dùng lại.
+            if (thing.touch) {
+                const touch = thing.touch as any;
+                if (!touch.__baseScale) touch.__baseScale = touch.scale.clone();
+                touch.setScale(touch.__baseScale.clone().multiplyScalar(fishScale));
+            }
+            thing.modelScale = fishScale;
             thing.bubble = this;
             this.things.push(thing);
         })

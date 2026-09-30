@@ -1,4 +1,4 @@
-import { _decorator, Animation, CCInteger, CCObjectFlags, Component, EventKeyboard, EventTouch, Input, input, instantiate, JsonAsset, KeyCode, MeshRenderer, misc, Node, PhysicsSystem, PhysicsSystem2D, Sprite, Tween, tween, UITransform, v2, v3, Vec2, Vec3 } from 'cc';
+import { _decorator, Animation, CCInteger, CCObjectFlags, Component, Enum, EventKeyboard, EventTouch, Input, input, instantiate, JsonAsset, KeyCode, MeshRenderer, misc, Node, PhysicsSystem, PhysicsSystem2D, Sprite, Tween, tween, UITransform, v2, v3, Vec2, Vec3 } from 'cc';
 import { Thing } from './Thing';
 import { Slot } from './Slot';
 import { ipm } from '../Manager/InputManager';
@@ -20,6 +20,13 @@ const { ccclass, property, executeInEditMode } = _decorator;
 
 export var room: Room = null;
 
+/** Normal: cá không có bể nào cần thì rơi xuống ô chờ (box) ở dưới. NoBox: không dùng ô chờ - chỉ cá bay được vào bể
+ * đang cần mới click được, click con khác chỉ rung nhẹ báo sai. */
+export enum GameMode {
+    Normal = 0,
+    NoBox = 1,
+}
+
 
 /**
  * Dữ liệu bong bóng: mỗi phần tử [x, y, types] - x/y là vị trí đặt bong bóng, types là mảng chỉ số loại cá bên
@@ -30,30 +37,18 @@ export var room: Room = null;
  */
 export const BubbleData: 
 [number, number, number[]][] = 
- [[132.428,1268.46,[9,19]],[-621.029,874.37,[17,17,18]],[620.997,1242.781,[19,19,17]],[-331.329,1268.474,[9,9]],[311.746,840.762,[18,18]],[710.886,827.523,[7]],[710.774,492.52,[3]],[-147.621,672.359,[7,7,3]],[245.951,381.656,[7,7]],[-226.381,189.451,[16,16]],[620.976,67.396,[16,8,8]],[-646.47,385.848,[3,7]],[125.572,0.849,[8]],[-646.417,-77.964,[11,11]],[-181.644,-297.852,[19,19,19]],[-620.956,-566.574,[11,11,11]],[342.884,-253.975,[11]],[101.306,-697.127,[18,18]],[-602.293,-1099.642,[2,2,2,8]],[-56.128,-1180.229,[9,3,3,3]],[602.341,-613.586,[2,2,2,18]],[495.364,-1155.148,[8,8,9,9]]] 
+[[-650.905,1266.884,[8,8,11]],[-686.529,1757.058,[18,18]],[-412.101,1565.051,[18]],[-705.221,843.121,[9]],[-403.264,989.995,[9]],[-463.104,595.327,[19,19]],[-675.765,260.582,[16,16]],[-672.624,-1514.491,[18,18]],[-379.517,-1812.69,[8,11,11]],[714.954,-1759.451,[8]],[-677.66,-2103.295,[2,2]],[-243.008,-2158.783,[7]],[416.167,-633.743,[17]],[514.252,-1074.415,[9,9]],[434.305,-1550.69,[18,8]],[304.881,-1912.161,[11]],[625.449,-2106.803,[2,7,7]],[-487.04,-129.415,[3,2,2]],[-716.902,-455.542,[17]],[-469.153,-687.71,[7,7]],[-668.211,-1046.375,[9,9]],[-409.557,-1279.294,[9]],[658.962,330.184,[19,19,16]],[470.292,-54.09,[3,3]],[672.872,-398.977,[2,17]],[713.673,-759.886,[7]],[741.371,-1336.73,[9]],[415.73,1821.652,[18]],[662.017,1542.625,[18,18,8]],[462.416,1189.879,[11,11]],[719.706,952.695,[9]],[476.584,697.828,[19,19]],[-670.486,-3393.299,[11,11]],[-318.025,-3400.459,[8]],[486.967,-2464.58,[2]],[252.3,-2735.337,[16,17]],[579.441,-2956.74,[17,17]],[503.114,-3314.668,[11]],[160.453,-3489.431,[8,8]],[268.925,-3137.181,[16]],[-99.866,-3126.703,[3,16,16]],[273.643,-2239.315,[17]],[-506.249,-2998.418,[3,3]],[-158.466,-2707.299,[2,16]],[-462.073,-2447.75,[17,17]],[738.453,-2636.741,[2]],[-727.688,-2728.619,[16]]] 
 
 
 
-export const Items = [
-  [9, 9, 9],
-  [19, 19, 19],
-  [17, 17, 17],
-  [18, 18, 18],
-  [7, 7, 7],
-  [3, 3, 3],
-  [7, 7, 7],
-  [16, 16, 16],
-  [8, 8, 8],
-  [11, 11, 11],
-  [19, 19, 19],
-  [11, 11, 11],
-  [2, 2, 2],
-  [18, 18, 18],
-  [2, 2, 2],
-  [8, 8, 8],
-  [9, 9, 9],
-  [3, 3, 3],
-];
+
+
+
+export const Items = 
+ [[18,18,18],[18,18,18],[8,8,8],[11,11,11],[9,9,9],[19,19,19],[19,19,19],[16,16,16],[3,3,3],[2,2,2],[17,17,17],[7,7,7],[9,9,9],[9,9,9],[18,18,18],[8,8,8],[11,11,11],[2,2,2],[7,7,7],[17,17,17],[2,2,2],[16,16,16],[17,17,17],[3,3,3],[16,16,16],[11,11,11],[8,8,8]] 
+
+
+
 
 @ccclass('Room')
 @executeInEditMode(true)
@@ -128,6 +123,30 @@ export class Room extends Component {
 
     items: number[][] = [];
 
+    @property({ type: Enum(GameMode), tooltip: 'Normal: cá không vào bể được thì rơi xuống ô chờ ở dưới (có thua khi đầy ô chờ).\nNoBox: ẩn ô chờ, chỉ click được cá đang có bể cần, click con khác chỉ rung nhẹ.' })
+    get gameMode() { return this._gameMode; }
+    set gameMode(v: GameMode) {
+        this._gameMode = v;
+        this.applyGameMode();
+    }
+    @property
+    private _gameMode: GameMode = GameMode.Normal;
+    get useBox() { return this._gameMode == GameMode.Normal; }
+
+    /** Nhóm node ô chờ để bật / tắt theo mode, để trống thì dùng node cha của boxNode (Boxes). */
+    @property({ type: Node, tooltip: 'Node chứa toàn bộ ô chờ để ẩn ở mode NoBox. Để trống = cha của boxNode' })
+    boxRoot: Node = null;
+
+    applyGameMode() {
+        if (!this.boxNode) return;
+        const root = this.boxRoot || this.boxNode.parent || this.boxNode;
+        root.active = this.useBox;
+        // Mode Normal cần thấy ô chờ: bật lại cả các node cha đã bị tắt (giữa Room và boxNode).
+        if (this.useBox) {
+            for (let n = this.boxNode; n && n != this.node; n = n.parent) n.active = true;
+        }
+    }
+
     tappable: boolean = false
 
     lose: boolean = false
@@ -197,6 +216,13 @@ export class Room extends Component {
         // this.thingNode.getChildByName("Button")?.on(Node.EventType.TOUCH_START, this.onButton, this);
     }
 
+    /** Tâm làn bubble (|x| trong thingNode) khi spawn thêm - khớp BubbleData: trái ~-540, phải ~+540. */
+    @property({ tooltip: 'Tâm làn trái/phải (|x| local trong Things) cho bubble spawn thêm' })
+    spawnLaneX: number = 540;
+    @property({ tooltip: 'Lệch ngẫu nhiên ± quanh tâm làn khi spawn thêm' })
+    spawnLaneJitter: number = 120;
+    private spawnLane: number = 0;
+
     spawnUnlimited() {
 
         // return;
@@ -234,11 +260,21 @@ export class Room extends Component {
             }
             fishes = Ulis.shuffleArray(fishes);
 
+            // Giữa là cột slot -> bubble spawn thêm chia đều vào 2 làn trái / phải như BubbleData ban đầu: mỗi bubble vào
+            // làn đang ít bubble hơn (hoà thì xen kẽ), xếp dọc dưới màn hình theo từng làn rồi nổi lên.
+            let laneCount = [0, 0];
+            this.bubbles.forEach(b => b && b.isValid && b.node.isValid && b.things.length > 0 && laneCount[b.node.position.x < 0 ? 0 : 1]++);
+            let laneQueued = [0, 0];
             let cursor = 0;
-            const data: any[] = typeAmount.map((size, i) => {
+            const data: any[] = typeAmount.map((size) => {
                 let types = fishes.slice(cursor, cursor + size);
                 cursor += size;
-                return [0, -5000 - i * 500, types];
+                let lane = laneCount[0] == laneCount[1] ? this.spawnLane : (laneCount[0] < laneCount[1] ? 0 : 1);
+                this.spawnLane = 1 - lane;
+                laneCount[lane]++;
+                let x = (lane == 0 ? -1 : 1) * (this.spawnLaneX + (Math.random() * 2 - 1) * this.spawnLaneJitter);
+                let y = -3500 - laneQueued[lane]++ * 500;
+                return [x, y, types];
             });
 
             // console.log(typeAmount, fishes, data);
@@ -298,7 +334,7 @@ export class Room extends Component {
                 return;
             }
             const ok = slotTypes.includes(t.thingType);
-            const msg = `Tut #${k} ${t.node.name} type=${t.thingType}` + (ok ? "" : " -> không bể nào cần lúc đầu, tap sẽ rơi xuống ô chờ");
+            const msg = `Tut #${k} ${t.node.name} type=${t.thingType}` + (ok ? "" : this.useBox ? " -> không bể nào cần lúc đầu, tap sẽ rơi xuống ô chờ" : " -> không bể nào cần lúc đầu, mode NoBox sẽ không click được");
             ok ? console.log(msg) : console.warn(msg);
         });
     }
@@ -438,6 +474,31 @@ export class Room extends Component {
     }
     get genBubleFromAvai() { return false; }
 
+    @property({ min: 0.05, step: 0.05, group: { name: 'Fish Size', id: 'fishSize' },
+        tooltip: 'Hệ số nhân scale node con đầu tiên (node model, vd RootNode / SK_Fish23) của mỗi con cá khi gen bubble. Chỉ nhân trên bản clone, model gốc trong Room/Fish giữ nguyên. 1 = giữ nguyên' })
+    bubbleFishScale: number = 1;
+    @property({ min: 0.05, step: 0.05, group: { name: 'Fish Size', id: 'fishSize' },
+        tooltip: 'Hệ số size cá trong bể (icon cá trên bể + cá bay vào bể). Độc lập với bubbleFishScale. 1 = giữ nguyên' })
+    slotFishScale: number = 1;
+    @property({ min: 0.05, step: 0.05, group: { name: 'Fish Size', id: 'fishSize' },
+        tooltip: 'Hệ số size cá nằm ở ô chờ (box). Độc lập với bubbleFishScale. 1 = giữ nguyên' })
+    boxFishScale: number = 1;
+    @property({ group: { name: 'Fish Size', id: 'fishSize' }, tooltip: 'Bấm để áp bubbleFishScale / slotFishScale và dựng lại bubble + icon trên bể trong Editor (giữ nguyên vị trí + loại cá đang hiện). boxFishScale thấy được khi chơi (preview)' })
+    set applyBubbleFishScale(v: boolean) {
+        const data = this.thingNode.getComponentsInChildren(Bubble).map(b => b.toData());
+        this.initBubbles(data.length ? data : undefined);
+        this.things = this.thingNode.getComponentsInChildren(Thing);
+        this.slots.forEach(s => s.avatar && s.avatar.isValid && s.avatar.setScale(v3(1, 1, 1).multiplyScalar(this.slotFishScale)));
+    }
+    get applyBubbleFishScale() { return false; }
+
+    /** Nhân scale node con đầu (node model) của bản clone cá trong bubble với bubbleFishScale - gọi từ Bubble.init. */
+    scaleBubbleFish(src: Node) {
+        const model = src.children[0];
+        if (!model || this.bubbleFishScale === 1 || !(this.bubbleFishScale > 0)) return;
+        model.setScale(model.scale.clone().multiplyScalar(this.bubbleFishScale));
+    }
+
     /**
      * Đảo ngược initBubbles(): in ra console đúng định dạng BubbleData ([x, y, types] cho từng bubble) theo vị
      * trí + loại cá hiện tại của this.bubbles - dùng sau khi tự kéo thả/chỉnh vị trí bubble trong Editor, copy kết
@@ -560,8 +621,11 @@ export class Room extends Component {
             // console.log(emptyBox.length);
             
             if(emptyBox.length == 1) {
+                // Box đang tắt (inactive) thì Animation chưa onLoad -> getState trả null; trước đây ném lỗi giữa
+                // tween callback của Slot.setThing làm kẹt hàng chờ cá (chơi 1 lúc là đứng game).
                 let anim = emptyBox[0]?.getComponent(Animation);
-                if(anim && !anim.getState("Box").isPlaying) {
+                let state = anim && anim.node.activeInHierarchy ? anim.getState("Box") : null;
+                if(state && !state.isPlaying) {
                     anim.play();
                     sm.playSound(SoundType.Alert);
                 } 
@@ -885,7 +949,7 @@ export class Room extends Component {
             slot.avatar = tt.node;
             tt.node.position = v3(0, 0, 0);
             tt.node.eulerAngles = v3(0, 0, 0);
-            tt.node.scale = v3(1, 1, 1);
+            tt.node.scale = v3(1, 1, 1).multiplyScalar(this.slotFishScale);
             tt.thingType = key;
             tt.node._objFlags = CCObjectFlags.DontSave;
             
@@ -902,6 +966,8 @@ export class Room extends Component {
             
             tt.init(false);
 
+            // Cá trong bể giả (Tank) đổi đúng loại mới, ẩn hết - mỗi con bay vào sẽ bật 1 con lên bơi.
+            slot.setupTank(key);
         }
         // console.log("items length", this.items.length);
         
@@ -970,35 +1036,34 @@ export class Room extends Component {
     }
 
     initSlots() {
-        this.slots = this.slotNode.getComponentsInChildren(Slot);
-        // this.slots.forEach((slot) => {
-        //     slot.node.destroy();
-        // })
-        // this.slots = [];
-        for(let i = 0; i < this.slotAmount; i++) {
-            let slot = this.slots[i] ;
-            slot.node.parent = this.slotNode;
-            slot.node.position = v3(this.slotDis*(-this.slotAmount/2 + 0.5 + i));
+        // Giữ nguyên vị trí bể đặt trong scene (không xếp lại theo slotDis nữa); chỉ sắp theo x để thứ tự vẫn trái -> phải
+        // như trước: Items[0] vào bể trái nhất.
+        this.slots = Room.sortByLayout(this.slotNode.getComponentsInChildren(Slot)).slice(0, this.slotAmount);
+        this.slots.forEach((slot, i) => {
             slot.initSlot();
             slot.node.name = "slot" + i;
-        }
+        });
+    }
+
+    /** Sắp bể / ô chờ theo vị trí đang đặt trong scene: trái -> phải, cùng cột thì trên -> dưới (bố cục dọc). */
+    static sortByLayout<T extends Component>(list: T[]): T[] {
+        return list.sort((a, b) => {
+            const pa = a.node.worldPosition, pb = b.node.worldPosition;
+            if (Math.abs(pa.x - pb.x) > 1) return pa.x - pb.x;
+            return pb.y - pa.y;
+        });
     }
 
     initBoxes() {
-        this.boxes = this.boxNode.getComponentsInChildren(Slot);
-        // this.boxes.forEach((slot) => {
-        //     slot.node.destroy();
-        // })
-        // this.boxes = [];
-        for(let i = 0; i < this.boxAmount; i++) {
-            let box = this.boxes[i]
-            box.node.parent = this.boxNode;
-            box.node.position = v3(this.boxDis*(-this.boxAmount/2 + 0.5 + i));
+        // Giữ nguyên vị trí ô chờ đặt trong scene (không xếp lại theo boxDis nữa); sắp theo x để ô chờ vẫn được lấp từ trái
+        // sang phải như trước.
+        this.boxes = Room.sortByLayout(this.boxNode.getComponentsInChildren(Slot)).slice(0, this.boxAmount);
+        this.boxes.forEach((box, i) => {
             box.init();
             box.index = i;
             box.node.name = "box" + i;
-        }
-
+        });
+        this.applyGameMode();
     }
 
     getBox(index: number) {
@@ -1085,9 +1150,12 @@ export class Room extends Component {
         if(slot && slot.added + slot.queue.length < slot.maxAmount) {
             this.onThing();
             this.checkSlot(thing);
-        } else {
+        } else if(this.useBox) {
             this.swapBox(thing);
             // this.checkFail(wpos);
+        } else {
+            // Mode NoBox: không có bể nào đang cần loại này -> không click được, chỉ rung nhẹ báo sai.
+            thing.shake();
         }
     }
 
@@ -1112,6 +1180,7 @@ export class Room extends Component {
         let thingyType = thing.thingType;
         let slot = this.slots.find(s => s.thingType == thingyType);
         if(!slot || slot.added + slot.queue.length >= slot.maxAmount) return;
+        thing.stopShake();
         this.onTapThing(thing);
         slot.setThing(thing);
     }
@@ -1164,13 +1233,13 @@ export class Room extends Component {
         sm.playSound(SoundType.Done); 
         this.slots = this.slots.filter(s => s != slot);
         this.onBox();
-        let original = slot.node.position.clone();
-        let pos = slot.node.position.clone();
-        pos.y = 750;
+        // Bể đầy: thu về scale 0 tại chỗ, đổi sang bể mới rồi phóng ra lại đúng scale gốc của bể (không bay lên nữa).
+        const baseScale = (slot.baseScale || slot.node.scale).clone();
+        slot.bounceTween?.stop();
         slot.count = 0;
         tween(slot.node)
         .delay(0.2)
-        .to(0.5, {position: pos}, {easing: cEasing("backIn", 1.3)})
+        .to(0.25, {scale: v3(0, 0, 0)}, {easing: 'backIn'})
         .call(() => {
             slot.label.node.active = false;
             slot.label.string = "0/" + slot.maxAmount;
@@ -1180,15 +1249,19 @@ export class Room extends Component {
                 t.onDespawn();
             });
             slot.things = [];
-            let addNew = this.setSlotThingFromArray(slot);   
+            // Fish.build đo bone bằng inverseTransformPoint - slot đang scale 0 thì ma trận suy biến -> NaN (cá trong
+            // bể mới tàng hình / méo hình). Trả scale gốc tạm thời lúc dựng cá rồi đưa về 0 (cùng frame, không nháy).
+            slot.node.setScale(baseScale);
+            let addNew = this.setSlotThingFromArray(slot);
+            slot.node.setScale(0, 0, 0);
             if(addNew) {
                 slot.label.node.active = true;
                 tween(slot.node)
-                .to(0.2, {position: original}, {easing: 'smooth'})
+                .to(0.3, {scale: baseScale}, {easing: 'backOut'})
                 .call(() => {
                     if(addNew) {
                         this.slots.push(slot);
-                        this.slots.sort((a, b) => a.node.position.x - b.node.position.x);
+                        Room.sortByLayout(this.slots);
 
                         let thingType = slot.thingType;
 

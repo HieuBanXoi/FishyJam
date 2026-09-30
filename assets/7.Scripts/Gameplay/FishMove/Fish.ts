@@ -186,7 +186,7 @@ export class Fish extends Component {
     moveToCenter(duration = 0.3): void {
         this.moveTween?.stop();
         this.moveTween = tween(this.node)
-            .to(duration, { position: new Vec3(), eulerAngles: v3(0, 45, 0) }, { easing: 'quadOut' })
+            .to(duration, { position: new Vec3(), eulerAngles: v3(0, 50, 0) }, { easing: 'quadOut' })
             .start();
     }
 

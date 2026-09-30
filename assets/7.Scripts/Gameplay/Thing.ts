@@ -37,6 +37,8 @@ export class Thing extends PoolMember {
     inited: boolean = false;
     moving: boolean = false;
     waiting: boolean = false;
+    /** Hệ số đã nhân vào model của con cá lúc gen bubble (Room.bubbleFishScale), Slot chia lại khi vào bể / ô chờ. */
+    modelScale: number = 1;
     init(toucable: boolean = true) {
         this.setMeshMat();
         if(this.inited) return;
@@ -97,6 +99,31 @@ export class Thing extends PoolMember {
         let wpos = v3(pos.x, pos.y, 0);       
         room.checkBox(this, wpos);     
         ipm.fisrtTap();   
+    }
+
+    /** Mode NoBox: click cá chưa có bể cần -> lắc ngang nhẹ tại chỗ + âm báo sai. Click liên tục không cộng dồn lệch. */
+    private shakeTween: Tween<Node> = null;
+    private shakeBase: Vec3 = null;
+    shake() {
+        this.stopShake();
+        sm.playSound(SoundType.LandWrong);
+        const base = this.shakeBase = this.node.position.clone();
+        const d = 14;
+        this.shakeTween = tween(this.node)
+            .to(0.05, { position: v3(base.x - d, base.y, base.z) })
+            .to(0.08, { position: v3(base.x + d, base.y, base.z) })
+            .to(0.07, { position: v3(base.x - d * 0.5, base.y, base.z) })
+            .to(0.05, { position: base.clone() })
+            .call(() => { this.shakeTween = null; this.shakeBase = null; })
+            .start();
+    }
+
+    stopShake() {
+        if (!this.shakeTween) return;
+        this.shakeTween.stop();
+        this.shakeTween = null;
+        if (this.shakeBase) this.node.position = this.shakeBase;
+        this.shakeBase = null;
     }
 
     // Không dùng outline làm highlight nữa: lineWidth tính theo đơn vị local của mesh nên cùng 1 giá trị (600000) thì
