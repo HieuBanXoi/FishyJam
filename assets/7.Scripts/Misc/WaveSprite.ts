@@ -49,7 +49,10 @@ export class WaveSprite extends Component {
         this.sprite = this.node.getComponent(Sprite);
         this.material = this.sprite.getMaterialInstance(0);
         if(this.bindTouch)  {
-            this.node.on(Node.EventType.TOUCH_START, this.onTouchStart, this);            
+            this.node.on(Node.EventType.TOUCH_START, this.onTouchStart, this);
+            // Node nhận TOUCH_START giữ luôn cả lượt chạm -> move không tới được Room nữa. Không bindMove thì vẫn chuyển
+            // move sang Room.onDragOver để giữ chuột bắt đầu từ khung / bể kính rồi lướt qua cá vẫn lấy được cá.
+            if(!this.bindMove) this.node.on(Node.EventType.TOUCH_MOVE, this.onDragMove, this);
         }
         if(this.bindMove)  {
             this.node.on(Node.EventType.TOUCH_MOVE, this.onTouchMove, this);    
@@ -105,6 +108,9 @@ export class WaveSprite extends Component {
     
     onTouchMove(event: EventTouch) {
         room.onTouchMove2(event);
+    }
+    onDragMove(event: EventTouch) {
+        room?.onDragOver(event);
     }
     onTouchEnd(event: EventTouch) {
         room.onTouchEnd2(event);

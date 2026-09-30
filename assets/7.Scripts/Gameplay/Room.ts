@@ -855,7 +855,8 @@ export class Room extends Component {
             }
         }
 
-        let width = neareast.touch.getWorldScale().x * 
+        if(!neareast) return null;
+        let width = neareast.touch.getWorldScale().x *
         neareast.touch.getComponent(UITransform).width;
 
         if(dis < width / 2 * multiplier) {
@@ -874,8 +875,37 @@ export class Room extends Component {
         }       
     }
 
+    @property({ tooltip: 'Giữ chuột / ngón tay rồi lướt qua cá: con nào đang có bể cần thì bay vào bể luôn (click vẫn dùng được)' })
+    dragCollect: boolean = true;
+
+    /** Đang giữ chuột và lướt tới vị trí event: con cá dưới con trỏ mà có bể đang cần thì cho bay vào bể như click.
+     * Cá không có bể cần thì bỏ qua (không rơi xuống ô chờ khi chỉ lướt qua). Gọi từ move toàn cục (bắt đầu giữ trên cá)
+     * lẫn move của nền (bắt đầu giữ trên nền). */
+    onDragOver(event: EventTouch) {
+        if (!this.dragCollect || !this.zoomed || this.lose || !event) return;
+        const pos = event.getUILocation();
+        const pos3 = v3(pos.x, pos.y, 0);
+        let best: Thing = null, bestD = Infinity;
+        for (const t of this.things) {
+            if (!t.bubble || t.moving || t.waiting || !t.touch || !t.touch.activeInHierarchy) continue;
+            const slot = this.slots.find(s => s.thingType == t.thingType);
+            if (!slot || slot.added + slot.queue.length >= slot.maxAmount) continue;
+            const w = t.touch.getWorldPosition();
+            w.z = 0;
+            const d = Vec3.distance(pos3, w);
+            const ut = t.touch.getComponent(UITransform);
+            const r = ut ? t.touch.getWorldScale().x * ut.width / 2 : 0;
+            if (d < r && d < bestD) {
+                best = t;
+                bestD = d;
+            }
+        }
+        if (best) best.onTouchStart(event);
+    }
+
     hThing: Thing = null;
     onTouchMove2(event: EventTouch) {
+        this.onDragOver(event);
         let pos = event.getUILocation();
         let neareast = this.getNearestThing(pos, 1.5);  
         if(this.things.includes(this.hThing)) this.hThing?.offHightlight();  
@@ -891,8 +921,13 @@ export class Room extends Component {
         // let pos = event.getUILocation();
         // let neareast = this.getNearestThing(pos);   
         // if(neareast) {
-        //     neareast.onHightlight();   
-        // }    
+        //     neareast.onHightlight();
+        // }
+        // Đã có lướt để lấy cá (onDragOver) -> nhả tay không tự đẩy con gần nhất đi nữa, tránh lỡ tay thả cá sai xuống ô chờ.
+        if(this.dragCollect) {
+            this.hThing = null;
+            return;
+        }
         if(this.things.includes(this.hThing)) {
             if(this.hThing) {
                 this.hThing.offHightlight();
@@ -1392,8 +1427,8 @@ export class Room extends Component {
 
         // return;
         if(!event) return;
-        
-        
+        this.onDragOver(event);
+
         let touches = event.getTouches();
         if(touches.length >= 2) {
             this.click = false;
