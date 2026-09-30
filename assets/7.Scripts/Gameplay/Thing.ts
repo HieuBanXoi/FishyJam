@@ -99,16 +99,14 @@ export class Thing extends PoolMember {
         ipm.fisrtTap();   
     }
 
+    // Không dùng outline làm highlight nữa: lineWidth tính theo đơn vị local của mesh nên cùng 1 giá trị (600000) thì
+    // cá glb (scale nhỏ) gần như không thấy, còn cá FBX (scale model hàng nghìn) phình thành 1 mảng màu viền vàng
+    // khổng lồ - nháy lên mỗi khi vuốt nhẹ trên nền lúc click nhanh (Room.onTouchMove2 -> onHightlight). Giữ 2 hàm để
+    // Room vẫn gọi được, nhưng không đụng vào lineWidth; viền (nếu muốn) chỉnh chung bằng Mats.lineWidth.
     onHightlight() {
-        this.getComponentsInChildren(MeshRenderer).forEach(mesh => {
-            mesh.materials.forEach(m => m?.setProperty("lineWidth", 600000));
-        });
     }
 
     offHightlight() {
-        this.getComponentsInChildren(MeshRenderer).forEach(mesh => {
-            mesh.materials.forEach(m => m?.setProperty("lineWidth", 0));
-        });
     }
 
     
