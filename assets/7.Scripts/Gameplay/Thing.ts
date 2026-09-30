@@ -1,4 +1,4 @@
-import { _decorator, Animation, color, Component, Enum, EventTouch, instantiate, Layers, Material, MeshRenderer, Node, Size, SkinnedMeshRenderer, sp, Sprite, SpriteFrame, Tween, tween, UIRenderer, UITransform, v3, Vec3 } from 'cc';
+import { _decorator, Animation, Color, color, Component, Enum, EventTouch, instantiate, Layers, Material, MeshRenderer, Node, Size, SkinnedMeshRenderer, sp, Sprite, SpriteFrame, Tween, tween, UIRenderer, UITransform, v3, Vec3 } from 'cc';
 import { PoolMember } from '../Pool/PoolMember';
 import { room } from './Room';
 import Ulis from '../Misc/Ulis';
@@ -66,18 +66,36 @@ export class Thing extends PoolMember {
 
     offTouch() {
         if(!this.node) return;
-        this.touch.off(Node.EventType.TOUCH_START, this.onTouchStart, this);
-        this.touch.off(Node.EventType.TOUCH_MOVE, this.none, this);
-        this.touch.off(Node.EventType.TOUCH_END, this.none, this);
-        this.touch.off(Node.EventType.TOUCH_CANCEL, this.none, this);
+        this.touch.off(Node.EventType.TOUCH_START, this.onPress, this);
+        this.touch.off(Node.EventType.TOUCH_MOVE, this.onDrag, this);
+        this.touch.off(Node.EventType.TOUCH_END, this.onRelease, this);
+        this.touch.off(Node.EventType.TOUCH_CANCEL, this.onRelease, this);
         this.offHightlight();
     }
 
     onTouch() {
-        this.touch.on(Node.EventType.TOUCH_START, this.onTouchStart, this);
-        this.touch.on(Node.EventType.TOUCH_MOVE, this.none, this);
-        this.touch.on(Node.EventType.TOUCH_END, this.none, this);
-        this.touch.on(Node.EventType.TOUCH_CANCEL, this.none, this);
+        this.touch.on(Node.EventType.TOUCH_START, this.onPress, this);
+        this.touch.on(Node.EventType.TOUCH_MOVE, this.onDrag, this);
+        this.touch.on(Node.EventType.TOUCH_END, this.onRelease, this);
+        this.touch.on(Node.EventType.TOUCH_CANCEL, this.onRelease, this);
+    }
+
+    /** Chạm xuống cá: Room.dragCollect bật thì chỉ sáng viền (nhấc tay mới chọn), tắt thì chọn ngay như cũ. */
+    onPress(event: EventTouch) {
+        if (room.dragCollect) {
+            ipm.fisrtTap();
+            room.onPointerMove(event);
+        } else {
+            this.onTouchStart(event);
+        }
+    }
+
+    onDrag(event: EventTouch) {
+        room.onPointerMove(event);
+    }
+
+    onRelease(event: EventTouch) {
+        room.onPointerUp(event);
     }
 
     onTouchMove(event: EventTouch) {
@@ -99,14 +117,73 @@ export class Thing extends PoolMember {
         ipm.fisrtTap();   
     }
 
-    // Không dùng outline làm highlight nữa: lineWidth tính theo đơn vị local của mesh nên cùng 1 giá trị (600000) thì
-    // cá glb (scale nhỏ) gần như không thấy, còn cá FBX (scale model hàng nghìn) phình thành 1 mảng màu viền vàng
-    // khổng lồ - nháy lên mỗi khi vuốt nhẹ trên nền lúc click nhanh (Room.onTouchMove2 -> onHightlight). Giữ 2 hàm để
-    // Room vẫn gọi được, nhưng không đụng vào lineWidth; viền (nếu muốn) chỉnh chung bằng Mats.lineWidth.
+    // Viền cá. Shader đẩy viền theo pháp tuyến (lineWidth * 0.001) SAU skinning, tức trong không gian node gốc của model
+    // -> lineWidth = px / (0.001 * world scale node gốc) để mọi loại cá (glb / FBX) có viền dày đúng px. Chỉ đổi trên
+    // material instance riêng của con này (Mats dùng chung cả loại). Tắt viền thì trả lineWidth / baseColor về giá trị
+    // material dùng chung (giữ instance: Cocos 3.8 setSharedMaterial cùng material là no-op).
+    // - hover: room.highlightWidth / highlightColor (vàng)
+    // - khi không hover: viền "nghỉ" - cá trong bubble đen (room.outlineWidth / outlineColor), icon trên bể vàng.
+    private highlighted: boolean = false;
+    private restOutlined: boolean = false;
+    private restWidth: number = 0;
+    private restColor: Color = null;
+
     onHightlight() {
+        if (this.highlighted || !room) return;
+        this.highlighted = true;
+        this.setOutline(room.highlightWidth, room.highlightColor);
     }
 
     offHightlight() {
+        if (!this.highlighted) return;
+        this.highlighted = false;
+        if (this.restOutlined) this.setOutline(this.restWidth, this.restColor);
+        else this.resetOutline();
+    }
+
+    /** Viền khi không hover: mặc định room.outlineWidth / outlineColor (cá trong bubble); truyền px / col cho viền riêng. */
+    applyRestOutline(px: number = room ? room.outlineWidth : 0, col: Color = room ? room.outlineColor : null) {
+        if (!room) return;
+        this.restWidth = px;
+        this.restColor = col;
+        this.restOutlined = px > 0 && !!col;
+        if (this.highlighted) return;
+        if (this.restOutlined) this.setOutline(px, col);
+        else this.resetOutline();
+    }
+
+    private setOutline(px: number, col: Color) {
+        this.getComponentsInChildren(MeshRenderer).forEach(mr => {
+            const lw = this.outlineWidth(mr, px);
+            if (lw <= 0) return;
+            mr.sharedMaterials.forEach((m, i) => {
+                if (!m) return;
+                const inst = mr.getMaterialInstance(i);
+                inst.setProperty('lineWidth', lw);
+                inst.setProperty('baseColor', col);
+            });
+        });
+    }
+
+    private resetOutline() {
+        this.getComponentsInChildren(MeshRenderer).forEach(mr => {
+            if (!mr.isValid) return;
+            mr.sharedMaterials.forEach((m, i) => {
+                if (!m) return;
+                const inst = mr.getRenderMaterial(i);
+                if (!inst || inst === m) return;
+                inst.setProperty('lineWidth', m.getProperty('lineWidth') ?? 0);
+                const bc = m.getProperty('baseColor');
+                if (bc) inst.setProperty('baseColor', bc);
+            });
+        });
+    }
+
+    private outlineWidth(mr: MeshRenderer, px: number): number {
+        const tf = (mr.model && mr.model.transform) || (mr as SkinnedMeshRenderer).skinningRoot || mr.node;
+        const s = Math.abs(tf.worldScale.x);
+        if (!(s > 0)) return 0;
+        return px / (0.001 * s);
     }
 
     

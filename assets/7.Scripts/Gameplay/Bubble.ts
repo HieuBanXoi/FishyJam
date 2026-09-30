@@ -72,6 +72,8 @@ export class Bubble extends PoolMember {
             f.init();
             thing.init();
             thing.bubble = this;
+            // Viền đen mỏng mặc định của cá trong bubble (room.outlineWidth / outlineColor).
+            thing.applyRestOutline();
             this.things.push(thing);
         })
         if(this.fishMove) {

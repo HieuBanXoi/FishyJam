@@ -1,4 +1,4 @@
-import { _decorator, Animation, CCInteger, CCObjectFlags, Component, EventKeyboard, EventTouch, Input, input, instantiate, JsonAsset, KeyCode, MeshRenderer, misc, Node, PhysicsSystem, PhysicsSystem2D, Sprite, Tween, tween, UITransform, v2, v3, Vec2, Vec3 } from 'cc';
+import { _decorator, Animation, CCInteger, CCObjectFlags, Color, Component, EventKeyboard, EventTouch, Input, input, instantiate, JsonAsset, KeyCode, MeshRenderer, misc, Node, PhysicsSystem, PhysicsSystem2D, Quat, Sprite, Tween, tween, UITransform, v2, v3, Vec2, Vec3 } from 'cc';
 import { Thing } from './Thing';
 import { Slot } from './Slot';
 import { ipm } from '../Manager/InputManager';
@@ -791,7 +791,8 @@ export class Room extends Component {
             }
         }
 
-        let width = neareast.touch.getWorldScale().x * 
+        if(!neareast) return null;
+        let width = neareast.touch.getWorldScale().x *
         neareast.touch.getComponent(UITransform).width;
 
         if(dis < width / 2 * multiplier) {
@@ -810,32 +811,82 @@ export class Room extends Component {
         }       
     }
 
+    // ---------- Chọn cá: nhấn / di tay -> viền vàng con cá dưới tay (hover), nhấc tay -> chọn con đó (như click) ----------
+
+    @property({ group: { name: 'Highlight' }, tooltip: 'Bật: nhấn / di tay thì con cá dưới tay sáng viền, nhấc tay mới chọn.\nTắt: chạm là chọn ngay như cũ' })
+    dragCollect: boolean = true;
+    @property({ group: { name: 'Highlight' }, tooltip: 'Màu viền con cá đang hover' })
+    highlightColor: Color = new Color(255, 214, 0, 255);
+    @property({ group: { name: 'Highlight' }, min: 0, step: 0.5, tooltip: 'Độ dày viền khi hover (pixel màn hình thiết kế), như nhau cho mọi loại cá' })
+    highlightWidth: number = 10;
+    @property({ group: { name: 'Highlight' }, min: 0.5, step: 0.05, tooltip: 'Bán kính bắt cá dưới tay, nhân với vùng chạm (Touch) của cá' })
+    hoverRadius: number = 1.2;
+    @property({ group: { name: 'Highlight' }, tooltip: 'Màu viền mỏng mặc định của cá trong bubble (khi không hover)' })
+    outlineColor: Color = new Color(0, 0, 0, 255);
+    @property({ group: { name: 'Highlight' }, min: 0, step: 0.5, tooltip: 'Độ dày viền mặc định của cá trong bubble. 0 = không có viền' })
+    outlineWidth: number = 3;
+    @property({ group: { name: 'Highlight' }, tooltip: 'Màu viền icon cá trên bể (Avatar)' })
+    avatarOutlineColor: Color = new Color(255, 214, 0, 255);
+    @property({ group: { name: 'Highlight' }, min: 0, step: 0.5, tooltip: 'Độ dày viền icon cá trên bể. 0 = không có viền' })
+    avatarOutlineWidth: number = 3;
+    @property({ group: { name: 'Avatar' }, tooltip: 'Góc xoay icon cá trên bể khi spawn (so với node Avatar)' })
+    avatarEuler: Vec3 = new Vec3(15, 50, 0);
+    @property({ type: [CCInteger], group: { name: 'Avatar' }, tooltip: 'Loại cá giữ nguyên góc cũ của Avatar (không xoay theo avatarEuler)' })
+    avatarKeepRotationTypes: number[] = [16, 17, 18];
+
     hThing: Thing = null;
-    onTouchMove2(event: EventTouch) {
-        let pos = event.getUILocation();
-        let neareast = this.getNearestThing(pos, 1.5);  
-        if(this.things.includes(this.hThing)) this.hThing?.offHightlight();  
-        if(neareast) {
-            this.hThing = neareast;
-            neareast.onHightlight();   
-        } else {
-            this.hThing = null;
-        }  
-        
-    }
-    onTouchEnd2(event: EventTouch) {
-        // let pos = event.getUILocation();
-        // let neareast = this.getNearestThing(pos);   
-        // if(neareast) {
-        //     neareast.onHightlight();   
-        // }    
-        if(this.things.includes(this.hThing)) {
-            if(this.hThing) {
-                this.hThing.offHightlight();
-                this.hThing.onTouchStart(event);
-                this.hThing = null;
+
+    /** Con cá trong bubble (chưa bay) gần điểm chạm nhất, trong bán kính vùng Touch * hoverRadius. */
+    findThingAt(pos: Vec2): Thing {
+        const pos3 = v3(pos.x, pos.y, 0);
+        let best: Thing = null, bestD = Infinity;
+        for (const t of this.things) {
+            if (!t.bubble || t.moving || t.waiting || !t.touch || !t.touch.activeInHierarchy) continue;
+            const w = t.touch.getWorldPosition();
+            w.z = 0;
+            const d = Vec3.distance(pos3, w);
+            const ut = t.touch.getComponent(UITransform);
+            const r = ut ? t.touch.getWorldScale().x * ut.width / 2 * this.hoverRadius : 0;
+            if (d < r && d < bestD) {
+                best = t;
+                bestD = d;
             }
         }
+        return best;
+    }
+
+    setHover(t: Thing) {
+        if (t == this.hThing) return;
+        if (this.hThing && this.hThing.isValid) this.hThing.offHightlight();
+        this.hThing = t;
+        if (t) t.onHightlight();
+    }
+
+    /** Nhấn xuống / di tay: viền con cá dưới tay. Gọi từ node cá, khung / bubble / nền và input toàn cục (trùng không sao). */
+    onPointerMove(event: EventTouch) {
+        if (!this.dragCollect || !event) return;
+        if (!this.zoomed || this.lose) {
+            this.setHover(null);
+            return;
+        }
+        this.setHover(this.findThingAt(event.getUILocation()));
+    }
+
+    /** Nhấc tay: chọn con cá dưới điểm nhấc tay (vào bể / ô chờ như click). */
+    onPointerUp(event: EventTouch) {
+        if (!this.dragCollect || !event) return;
+        const t = this.hThing ? this.findThingAt(event.getUILocation()) : null;
+        this.setHover(null);
+        if (!t || !t.isValid || !this.things.includes(t) || !t.bubble || t.moving) return;
+        if (!this.zoomed || this.lose) return;
+        t.onTouchStart(event);
+    }
+
+    onTouchMove2(event: EventTouch) {
+        this.onPointerMove(event);
+    }
+    onTouchEnd2(event: EventTouch) {
+        this.onPointerUp(event);
     }
 
     getSrc(index: number) {
@@ -884,7 +935,15 @@ export class Room extends Component {
             tt.node.parent = p;
             slot.avatar = tt.node;
             tt.node.position = v3(0, 0, 0);
-            tt.node.eulerAngles = v3(0, 0, 0);
+            // Góc icon: avatarEuler so với node Avatar (bù góc sẵn có của Avatar-001); loại trong avatarKeepRotationTypes
+            // giữ nguyên góc cũ (theo Avatar-001).
+            if (this.avatarKeepRotationTypes.includes(key)) {
+                tt.node.eulerAngles = v3(0, 0, 0);
+            } else {
+                const want = Quat.fromEuler(new Quat(), this.avatarEuler.x, this.avatarEuler.y, this.avatarEuler.z);
+                const inv = Quat.invert(new Quat(), p.rotation);
+                tt.node.rotation = Quat.multiply(new Quat(), inv, want);
+            }
             tt.node.scale = v3(1, 1, 1);
             tt.thingType = key;
             tt.node._objFlags = CCObjectFlags.DontSave;
@@ -899,8 +958,10 @@ export class Room extends Component {
             fish._objFlags = CCObjectFlags.DontSave;
             f.init();
             f.setAnim(false);
-            
+
             tt.init(false);
+            // Viền mỏng (mặc định vàng) cho icon cá trên bể.
+            tt.applyRestOutline(this.avatarOutlineWidth, this.avatarOutlineColor);
 
         }
         // console.log("items length", this.items.length);
@@ -1276,7 +1337,8 @@ export class Room extends Component {
     click: boolean = false;
     onTouchStart(event: EventTouch) {
         if(!event) return;
-        this.location = event.getUILocation(); 
+        this.onPointerMove(event);
+        this.location = event.getUILocation();
         if(this.s1 == null) {
             this.s1 = this.location.clone();
         } else if(this.s2 == null) {
@@ -1304,8 +1366,8 @@ export class Room extends Component {
 
         // return;
         if(!event) return;
-        
-        
+        this.onPointerMove(event);
+
         let touches = event.getTouches();
         if(touches.length >= 2) {
             this.click = false;
@@ -1351,6 +1413,7 @@ export class Room extends Component {
 
     onTouchEnd(event: EventTouch) {
         if(!event) return;
+        this.onPointerUp(event);
         this.startPos = null;
         let out = event.getUILocation();
         if(this.s1 && this.s2) {

@@ -49,10 +49,21 @@ export class WaveSprite extends Component {
         this.sprite = this.node.getComponent(Sprite);
         this.material = this.sprite.getMaterialInstance(0);
         if(this.bindTouch)  {
-            this.node.on(Node.EventType.TOUCH_START, this.onTouchStart, this);            
+            this.node.on(Node.EventType.TOUCH_START, this.onTouchStart, this);
+            // Node nhận TOUCH_START giữ luôn lượt chạm -> move / end không tới Room nữa: chuyển sang Room để bắt đầu nhấn
+            // từ khung / bể kính / bubble vẫn hover (viền) được cá dưới tay, nhấc tay chọn.
+            if(!this.bindMove) {
+                this.node.on(Node.EventType.TOUCH_START, this.onDragMove, this);
+                this.node.on(Node.EventType.TOUCH_MOVE, this.onDragMove, this);
+                this.node.on(Node.EventType.TOUCH_END, this.onDragEnd, this);
+                this.node.on(Node.EventType.TOUCH_CANCEL, this.onDragEnd, this);
+            }
         }
         if(this.bindMove)  {
-            this.node.on(Node.EventType.TOUCH_MOVE, this.onTouchMove, this);    
+            // Nhấn trên nền cũng hover luôn con cá dưới tay; hủy chạm tính như nhấc tay.
+            this.node.on(Node.EventType.TOUCH_START, this.onTouchMove, this);
+            this.node.on(Node.EventType.TOUCH_CANCEL, this.onTouchEnd, this);
+            this.node.on(Node.EventType.TOUCH_MOVE, this.onTouchMove, this);
             this.node.on(Node.EventType.TOUCH_END 
             || Node.EventType.TOUCH_CANCEL, this.onTouchEnd, this);     
         
@@ -108,6 +119,12 @@ export class WaveSprite extends Component {
     }
     onTouchEnd(event: EventTouch) {
         room.onTouchEnd2(event);
+    }
+    onDragMove(event: EventTouch) {
+        room?.onPointerMove(event);
+    }
+    onDragEnd(event: EventTouch) {
+        room?.onPointerUp(event);
     }
 
 
