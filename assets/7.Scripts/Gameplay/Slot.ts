@@ -44,6 +44,75 @@ export class Slot extends PoolMember {
         let sps = this.node.getComponentsInChildren(Sprite);
         this.anim = this.node.getComponent(Animation);
         if (!this.fishMove) this.fishMove = this.getComponent(FishMove);
+        this.initStars();
+    }
+
+    // ---------- Sao tiến độ: Stars > Star.. (sao rỗng) + StarDone.. (sao sáng, tắt sẵn) ----------
+    // Mỗi con cá đáp vào bể bật 1 StarDone theo vị trí trái -> giữa -> phải; bể nhận loại mới (setLabel) thì tắt hết.
+    // Sao giữa bật ra tại chỗ; sao 2 bên xuất hiện ở sao giữa, vừa phóng to vừa bay ra phía mình, quá đích
+    // STAR_OVERSHOOT rồi bật về đúng chỗ.
+    static readonly STAR_FLY_TIME = 0.22;
+    static readonly STAR_SNAP_TIME = 0.08;
+    static readonly STAR_OVERSHOOT = 0.2;
+
+    starDones: Node[] = [];
+    private starBaseScales: Vec3[] = [];
+    private starBasePos: Vec3[] = [];
+    private starLit: number = 0;
+
+    initStars() {
+        // Node chứa sao tên "Star" / "Stars"... - lấy node con đầu tiên bắt đầu bằng "Star" có chứa StarDone.
+        const root = this.node.children.find(c => c.name.startsWith("Star") && c.children.some(k => k.name.startsWith("StarDone")));
+        this.starDones = root ? root.children.filter(c => c.name.startsWith("StarDone")) : [];
+        this.starDones.sort((a, b) => a.position.x - b.position.x);
+        this.starBaseScales = this.starDones.map(s => s.scale.clone());
+        this.starBasePos = this.starDones.map(s => s.position.clone());
+        this.resetStars();
+    }
+
+    resetStars() {
+        this.starLit = 0;
+        this.starDones.forEach((s, i) => {
+            Tween.stopAllByTarget(s);
+            s.setScale(this.starBaseScales[i]);
+            s.setPosition(this.starBasePos[i]);
+            s.active = false;
+        });
+    }
+
+    /** Vị trí sao giữa (sao có x gần 0 nhất) - điểm xuất phát của 2 sao bên. */
+    private starCenter(): Vec3 {
+        let best = this.starBasePos[0];
+        this.starBasePos.forEach(p => { if (Math.abs(p.x) < Math.abs(best.x)) best = p; });
+        return best;
+    }
+
+    /** Bật sao kế tiếp (gọi khi 1 con cá đáp vào bể). */
+    lightNextStar() {
+        this.lightStar(this.starLit);
+        this.starLit++;
+    }
+
+    lightStar(index: number) {
+        const s = this.starDones[index];
+        if (!s || s.active) return;
+        const base = this.starBaseScales[index];
+        const pos = this.starBasePos[index];
+        const center = this.starCenter();
+        s.active = true;
+        Tween.stopAllByTarget(s);
+        if (!pos || !center || pos === center) {
+            s.setScale(0, 0, 0);
+            tween(s).to(0.3, { scale: base.clone() }, { easing: 'backOut' }).start();
+            return;
+        }
+        const over = pos.clone().add(pos.clone().subtract(center).multiplyScalar(Slot.STAR_OVERSHOOT));
+        s.setPosition(center);
+        s.setScale(0, 0, 0);
+        tween(s)
+            .to(Slot.STAR_FLY_TIME, { position: over, scale: base.clone().multiplyScalar(1.1) }, { easing: 'quadOut' })
+            .to(Slot.STAR_SNAP_TIME, { position: pos.clone(), scale: base.clone() }, { easing: 'quadIn' })
+            .start();
     }
 
     index: number = 0
@@ -88,6 +157,8 @@ export class Slot extends PoolMember {
         this.maxAmount = amount;
         // this.label.node.active = false;
         this.label.string =  "0/" + amount;
+        // Bể nhận loại mới -> tắt hết sao.
+        this.resetStars();
     }
 
     count: number = 0
@@ -230,6 +301,7 @@ export class Slot extends PoolMember {
                 sm.playSound(SoundType.LandRight);
                 callback && callback();
                 this.decreaseLabel();
+                this.lightNextStar();
                 if(before == this.added - 1 && this.added == this.amount) {
                     room.onFull(this);
                 }
