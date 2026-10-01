@@ -55,7 +55,8 @@ export class Slot extends PoolMember {
     private starBaseScales: Vec3[] = [];
 
     initStars() {
-        const root = this.node.getChildByName("Star");
+        // Node chứa sao tên "Star" / "Stars"... - lấy node con đầu tiên bắt đầu bằng "Star" có chứa StarDone.
+        const root = this.node.children.find(c => c.name.startsWith("Star") && c.children.some(k => k.name.startsWith("StarDone")));
         this.starDones = root ? root.children.filter(c => c.name.startsWith("StarDone")) : [];
         this.starDones.sort((a, b) => a.position.x - b.position.x);
         this.starBaseScales = this.starDones.map(s => s.scale.clone());
