@@ -53,6 +53,12 @@ export class Slot extends PoolMember {
     // Mỗi con cá đáp vào bể bật 1 StarDone theo vị trí từ trái sang phải, bể đầy đổi loại mới thì tắt hết.
     starDones: Node[] = [];
     private starBaseScales: Vec3[] = [];
+    private starBasePos: Vec3[] = [];
+
+    /** Anim sao 2 bên: bay từ sao giữa ra, quá đích STAR_OVERSHOOT (tỉ lệ quãng đường) rồi bật về đúng chỗ. */
+    static readonly STAR_FLY_TIME = 0.22;
+    static readonly STAR_SNAP_TIME = 0.08;
+    static readonly STAR_OVERSHOOT = 0.2;
 
     initStars() {
         // Node chứa sao tên "Star" / "Stars"... - lấy node con đầu tiên bắt đầu bằng "Star" có chứa StarDone.
@@ -60,24 +66,47 @@ export class Slot extends PoolMember {
         this.starDones = root ? root.children.filter(c => c.name.startsWith("StarDone")) : [];
         this.starDones.sort((a, b) => a.position.x - b.position.x);
         this.starBaseScales = this.starDones.map(s => s.scale.clone());
+        this.starBasePos = this.starDones.map(s => s.position.clone());
     }
 
     resetStars() {
         this.starDones.forEach((s, i) => {
             Tween.stopAllByTarget(s);
             s.setScale(this.starBaseScales[i]);
+            s.setPosition(this.starBasePos[i]);
             s.active = false;
         });
+    }
+
+    /** Vị trí sao giữa (sao có x gần 0 nhất) - điểm xuất phát của 2 sao bên. */
+    private starCenter(): Vec3 {
+        let best = this.starBasePos[0];
+        this.starBasePos.forEach(p => { if (Math.abs(p.x) < Math.abs(best.x)) best = p; });
+        return best;
     }
 
     lightStar(index: number) {
         const s = this.starDones[index];
         if (!s || s.active) return;
         const base = this.starBaseScales[index];
+        const pos = this.starBasePos[index];
+        const center = this.starCenter();
         s.active = true;
         Tween.stopAllByTarget(s);
+        if (!pos || !center || pos === center) {
+            // Sao giữa: bật ra tại chỗ.
+            s.setScale(0, 0, 0);
+            tween(s).to(0.3, { scale: base.clone() }, { easing: 'backOut' }).start();
+            return;
+        }
+        // Sao 2 bên: xuất hiện ở sao giữa, vừa phóng to vừa bay ra phía mình, quá đích 1 chút rồi bật về đúng chỗ.
+        const over = pos.clone().add(pos.clone().subtract(center).multiplyScalar(Slot.STAR_OVERSHOOT));
+        s.setPosition(center);
         s.setScale(0, 0, 0);
-        tween(s).to(0.3, { scale: base.clone() }, { easing: 'backOut' }).start();
+        tween(s)
+            .to(Slot.STAR_FLY_TIME, { position: over, scale: base.clone().multiplyScalar(1.1) }, { easing: 'quadOut' })
+            .to(Slot.STAR_SNAP_TIME, { position: pos.clone(), scale: base.clone() }, { easing: 'quadIn' })
+            .start();
     }
 
     // ---------- Bể giả: Tank > TankBubble (Bubble giả) > Fish > TankFish0..N ----------
